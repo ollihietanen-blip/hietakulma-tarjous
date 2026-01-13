@@ -2,30 +2,115 @@ import React, { useState } from 'react';
 import { QuotationProvider } from './context/QuotationContext';
 import Sidebar from './components/Layout/Sidebar';
 import DashboardHome from './components/Views/DashboardHome';
-import QuantityTakeoff from './components/Views/QuantityTakeoff';
+import ElementCalculatorView from './components/Views/ElementCalculatorView';
 import QuotationView from './components/Views/QuotationView';
+import CustomersView from './components/Views/CustomersView';
+import ProjectDashboardView from './components/Views/ProjectDashboardView';
+import PipelineView from './components/Views/PipelineView';
+import ProjectsListView from './components/Views/ProjectsListView';
+import CostTrackingView from './components/Views/CostTrackingView';
+import TrussCalculatorView from './components/Views/TrussCalculatorView';
+import { Menu } from 'lucide-react';
 
-export type TabType = 'info' | 'documents' | 'elements' | 'products' | 'installation' | 'pricing' | 'delivery' | 'summary';
+// Added 'messages'
+export type TabType = 'documents' | 'elements' | 'products' | 'installation' | 'pricing' | 'delivery' | 'summary' | 'contract' | 'messages';
+export type UserRole = 'sales' | 'manager';
 
 function App() {
   const [currentView, setCurrentView] = useState('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [userRole, setUserRole] = useState<UserRole>('sales');
+
+  const projectViews = [
+    'project_dashboard', 
+    'element_calculator', 
+    'truss_calculator', 
+    'quotation', 
+    'cost_tracking'
+  ];
+  const isProjectActive = projectViews.includes(currentView);
 
   return (
     <QuotationProvider>
       <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900">
-        {/* Fixed Sidebar */}
-        <Sidebar currentView={currentView} onChangeView={setCurrentView} />
+        
+        {/* Mobile Header */}
+        <div className="fixed top-0 left-0 right-0 h-14 bg-hieta-black text-white z-50 flex items-center justify-between px-4 md:hidden shadow-md">
+            <div className="flex items-center gap-3">
+                <button 
+                    onClick={() => setIsMobileMenuOpen(true)}
+                    className="p-1 text-slate-300 hover:text-white transition-colors"
+                >
+                    <Menu size={24} />
+                </button>
+                <span className="font-display font-bold text-lg tracking-wider uppercase">Hietakulma</span>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-hieta-sand text-hieta-black flex items-center justify-center font-bold text-xs">
+                OH
+            </div>
+        </div>
 
-        {/* Main Content Area */}
-        <div className="flex-1 ml-64">
+        {/* Sidebar (Responsive) */}
+        <Sidebar 
+            currentView={currentView} 
+            onChangeView={setCurrentView} 
+            isOpen={isMobileMenuOpen}
+            onClose={() => setIsMobileMenuOpen(false)}
+            userRole={userRole}
+            onToggleRole={() => setUserRole(prev => prev === 'sales' ? 'manager' : 'sales')}
+            isProjectActive={isProjectActive}
+        />
+
+        {/* Main Content Area - Responsive margin */}
+        <div className="flex-1 w-full md:ml-64 min-h-screen flex flex-col pt-14 md:pt-0 transition-all duration-300">
            {currentView === 'dashboard' && (
-               <DashboardHome onNewQuote={() => setCurrentView('quotation')} />
+               <div className="flex-1 bg-hieta-light">
+                   <DashboardHome 
+                        onNewQuote={() => setCurrentView('customers')} 
+                        userRole={userRole}
+                   />
+               </div>
            )}
-           {currentView === 'takeoff' && (
-               <QuantityTakeoff onComplete={() => setCurrentView('quotation')} />
+           {currentView === 'pipeline' && (
+               <div className="flex-1 bg-hieta-light">
+                   <PipelineView />
+               </div>
+           )}
+           {currentView === 'customers' && (
+               <div className="flex-1 bg-hieta-light">
+                   <CustomersView onSelectProject={() => setCurrentView('project_dashboard')} />
+               </div>
+           )}
+           {currentView === 'projects' && (
+               <div className="flex-1 bg-hieta-light">
+                   <ProjectsListView onOpenProject={() => setCurrentView('project_dashboard')} />
+               </div>
+           )}
+           {/* Active Project Workspaces */}
+           {currentView === 'project_dashboard' && (
+               <div className="flex-1 bg-hieta-light">
+                   <ProjectDashboardView onNext={() => setCurrentView('quotation')} />
+               </div>
+           )}
+           {currentView === 'element_calculator' && (
+               <div className="flex-1 bg-hieta-light">
+                   <ElementCalculatorView onComplete={() => setCurrentView('quotation')} />
+               </div>
+           )}
+           {currentView === 'truss_calculator' && (
+               <div className="flex-1 bg-hieta-light">
+                   <TrussCalculatorView onComplete={() => setCurrentView('quotation')} />
+               </div>
            )}
            {currentView === 'quotation' && (
-               <QuotationView />
+               <div className="flex-1 h-screen">
+                   <QuotationView />
+               </div>
+           )}
+           {currentView === 'cost_tracking' && (
+               <div className="flex-1 h-screen">
+                   <CostTrackingView />
+               </div>
            )}
         </div>
       </div>

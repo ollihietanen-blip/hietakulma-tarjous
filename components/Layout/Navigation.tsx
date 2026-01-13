@@ -1,14 +1,16 @@
 import React from 'react';
 import { TabType } from '../../App';
+import { useQuotation } from '../../context/QuotationContext';
 import { 
-  Info, 
   FileText, 
   Box, 
   Grid, 
   DollarSign, 
   Truck, 
   CheckCircle,
-  Hammer
+  Hammer,
+  FileSignature,
+  MessageSquare
 } from 'lucide-react';
 
 interface NavigationProps {
@@ -17,15 +19,21 @@ interface NavigationProps {
 }
 
 const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
-  const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
-    { id: 'info', label: 'Projekti', icon: <Info size={18} /> },
+  const { quotation } = useQuotation();
+  
+  // Logic to show Contract tab
+  const showContract = ['sent', 'accepted', 'rejected'].includes(quotation.status);
+
+  const tabs: { id: TabType; label: string; icon: React.ReactNode; hidden?: boolean }[] = [
     { id: 'documents', label: 'Dokumentit', icon: <FileText size={18} /> },
     { id: 'elements', label: 'Tehdastuotanto', icon: <Box size={18} /> },
     { id: 'products', label: 'Työmaatoimitukset', icon: <Grid size={18} /> },
     { id: 'installation', label: 'Asennus', icon: <Hammer size={18} /> },
     { id: 'delivery', label: 'Logistiikka', icon: <Truck size={18} /> },
     { id: 'pricing', label: 'Hinnoittelu', icon: <DollarSign size={18} /> },
+    { id: 'messages', label: 'Viestit', icon: <MessageSquare size={18} /> },
     { id: 'summary', label: 'Yhteenveto', icon: <CheckCircle size={18} /> },
+    { id: 'contract', label: 'Sopimus', icon: <FileSignature size={18} />, hidden: !showContract },
   ];
 
   return (
@@ -40,7 +48,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
             scrollbar-width: none;
           }
         `}</style>
-        {tabs.map((tab) => {
+        {tabs.filter(t => !t.hidden).map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button

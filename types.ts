@@ -1,9 +1,88 @@
+
+
+
+export type QuotationStatus = 
+  | 'draft'               // Luonnos, muokattavissa
+  | 'awaiting_approval'   // Lähetetty hyväksyttäväksi (TJ)
+  | 'approved'            // Sisäisesti hyväksytty (Valmis lähetettäväksi)
+  | 'sent'                // Lähetetty asiakkaalle
+  | 'accepted'            // Asiakas hyväksynyt (Kauppa)
+  | 'rejected';           // Asiakas hylännyt (Hävinnyt)
+
+export interface Message {
+  id: string;
+  timestamp: Date;
+  author: string;
+  text: string;
+  type: 'internal' | 'customer';
+}
+
+export type CostEntryCategory = 'elements' | 'products' | 'trusses' | 'installation' | 'logistics' | 'design' | 'other';
+
+export interface CostEntry {
+  id: string;
+  date: Date;
+  category: CostEntryCategory;
+  description: string;
+  amount: number; // Alv 0%
+  supplier?: string;
+}
+
+export interface SentInstruction {
+  name: string;
+  sentAt: Date;
+}
+
+export type FileCategory = 'Pääpiirustus' | 'Rakennesuunnitelma' | 'Sopimus' | 'Asiakkaan Tiedosto' | 'Muu Tiedosto';
+
+export interface ProjectFile {
+    id: string;
+    name: string;
+    size: number; // in bytes
+    category: FileCategory;
+    uploadedAt: Date;
+    uploader: string; // e.g., "Olli Hietanen" or "Asiakas"
+}
+
 export interface Quotation {
   id: string;
   createdAt: Date;
   updatedAt: Date;
-  status: 'draft' | 'sent' | 'accepted' | 'rejected';
+  status: QuotationStatus;
   
+  // Workflow Metadata
+  approval?: {
+    requestedAt?: Date;
+    approvedAt?: Date;
+    approverName?: string;
+    feedback?: string;
+  };
+  sentAt?: Date;
+  decisionAt?: Date;
+  decisionReason?: string;
+
+  // Contract Details
+  contract?: {
+    contractNumber: string;
+    signDate?: Date;
+    signingPlace?: string;
+    additionalTerms?: string;
+  };
+
+  // Post-Acceptance
+  sentInstructions: SentInstruction[];
+
+  // Post Calculation (Jälkilaskenta)
+  postCalculation: {
+    entries: CostEntry[];
+  };
+  
+  // Communication
+  messages: Message[];
+  
+  // Attachments
+  files: ProjectFile[];
+
   project: Project;
   customer: Customer;
   documents: DocumentItem[];
@@ -23,6 +102,7 @@ export interface Project {
   buildingType: 'loma-asunto' | 'omakotitalo' | 'varastohalli' | 'sauna' | 'rivitalo' | 'paritalo';
   deliveryWeek?: string;
   offerDate: Date;
+  owner: string;
 }
 
 export interface Customer {
@@ -133,6 +213,7 @@ export type VatMode = 'standard' | 'construction_service';
 
 export interface CategoryMarkups {
   elements: number;
+  trusses: number;
   windowsDoors: number;
   worksiteDeliveries: number;
   installation: number;
@@ -155,6 +236,7 @@ export interface PricingCalculation {
   
   // Totals (Cost Basis)
   elementsCost: number;
+  trussesCost: number;
   productsCost: number; // Split into windows/doors and generic later
   documentsCost: number;
   installationCost: number;
@@ -173,6 +255,7 @@ export interface PricingCalculation {
   // Detailed Breakdown for UI
   breakdown: {
     elements: PricingCategoryBreakdown;
+    trusses: PricingCategoryBreakdown;
     windowsDoors: PricingCategoryBreakdown;
     worksiteDeliveries: PricingCategoryBreakdown;
     installation: PricingCategoryBreakdown;
@@ -183,6 +266,7 @@ export interface PricingCalculation {
 
 export const DEFAULT_CATEGORY_MARKUPS: CategoryMarkups = {
   elements: 22.0,
+  trusses: 20.0,
   windowsDoors: 18.0,
   worksiteDeliveries: 15.0,
   installation: 28.0,
@@ -422,7 +506,7 @@ export const ASSEMBLY_LEVELS: AssemblyLevel[] = [
     timeline: {
       frameAssembly: '3-5 päivää',
       roofing: '2-3 päivää',
-      total: '7-10 työpäivää'
+      total: '7-10 työpivää'
     },
     
     customerWork: {

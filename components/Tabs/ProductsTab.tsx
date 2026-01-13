@@ -71,10 +71,9 @@ const ProductsTab: React.FC = () => {
       });
   };
 
-  // Styles
-  const inputClass = "w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:bg-white text-slate-900 font-medium text-sm py-1.5 px-2 transition-all duration-200 outline-none placeholder:text-slate-300 focus:shadow-sm rounded-t-sm";
-  const headerInputClass = "w-full bg-white border border-slate-200 focus:border-blue-500 rounded-lg text-sm px-3 py-2 outline-none shadow-sm";
-  const tableHeaderClass = "px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-slate-200";
+  // Styles - Improved touch targets for mobile
+  const inputClass = "w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:bg-white text-slate-900 font-medium text-sm py-2 px-2 transition-all duration-200 outline-none placeholder:text-slate-300 focus:shadow-sm rounded-t-sm min-w-[60px]";
+  const tableHeaderClass = "px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-slate-200 whitespace-nowrap";
 
   // Calculate totals for dashboard
   const windowsTotal = quotation.products.find(s => s.id === 'windows')?.items.reduce((sum, i) => sum + (i.totalPrice || 0), 0) || 0;
@@ -87,21 +86,21 @@ const ProductsTab: React.FC = () => {
     <div className="space-y-8 pb-20">
        
        {/* 1. Header & Dashboard */}
-       <div className="flex flex-col md:flex-row gap-6 md:items-end justify-between">
+       <div className="flex flex-col gap-6">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 mb-2">Työmaatoimitukset</h1>
-            <p className="text-slate-500 max-w-2xl">Määritä työmaalle toimitettavat irto-osat, ikkunat ja ovet. Hinnat lisätään kokonaislaskelmaan automaattisesti.</p>
+            <p className="text-slate-500 text-sm md:text-base max-w-2xl">Määritä työmaalle toimitettavat irto-osat, ikkunat ja ovet.</p>
           </div>
           
-          <div className="flex gap-4">
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 min-w-[140px]">
+          <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 min-w-[160px] flex-shrink-0">
                   <div className="bg-blue-50 p-2 rounded-lg text-blue-600"><LayoutGrid size={20}/></div>
                   <div>
                       <div className="text-[10px] uppercase font-bold text-slate-400">Ikkunat & Ovet</div>
                       <div className="text-lg font-bold text-slate-900">{(windowsTotal + doorsTotal).toLocaleString('fi-FI')} €</div>
                   </div>
               </div>
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 min-w-[140px]">
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 min-w-[160px] flex-shrink-0">
                   <div className="bg-emerald-50 p-2 rounded-lg text-emerald-600"><Package size={20}/></div>
                   <div>
                       <div className="text-[10px] uppercase font-bold text-slate-400">Materiaalit</div>
@@ -131,7 +130,7 @@ const ProductsTab: React.FC = () => {
                 
                 {/* Section Header */}
                 <div 
-                    className={`px-4 sm:px-6 py-4 flex items-center justify-between cursor-pointer select-none ${isOpen ? 'bg-slate-50/50 border-b border-slate-100' : ''}`}
+                    className={`px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between cursor-pointer select-none gap-4 ${isOpen ? 'bg-slate-50/50 border-b border-slate-100' : ''}`}
                     onClick={() => toggleSection(section.id)}
                 >
                     <div className="flex items-center gap-3">
@@ -144,12 +143,12 @@ const ProductsTab: React.FC = () => {
                         <div>
                             <h3 className="text-base font-bold text-slate-900">{section.title}</h3>
                             <div className="text-xs text-slate-500 font-medium">
-                                {section.items.length} riviä • Yhteensä: <span className="text-slate-900 font-bold">{sectionTotal.toLocaleString('fi-FI')} €</span>
+                                {section.items.length} riviä • <span className="text-slate-900 font-bold">{sectionTotal.toLocaleString('fi-FI')} €</span>
                             </div>
                         </div>
                     </div>
                     
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 pl-10 sm:pl-0">
                         <button 
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -158,9 +157,9 @@ const ProductsTab: React.FC = () => {
                                 else handleAddGeneric(section.id);
                                 if (!isOpen) toggleSection(section.id);
                             }}
-                            className="text-sm bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-200 font-bold px-3 py-1.5 rounded-lg shadow-sm transition-all flex items-center gap-2"
+                            className="w-full sm:w-auto text-sm bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-200 font-bold px-3 py-2 rounded-lg shadow-sm transition-all flex items-center justify-center gap-2"
                         >
-                            <Plus size={16} /> Lisää
+                            <Plus size={16} /> Lisää rivi
                         </button>
                     </div>
                 </div>
@@ -190,14 +189,14 @@ const ProductsTab: React.FC = () => {
 
                         {/* Special Table (Windows/Doors) */}
                         {isSpecial && section.items.length > 0 && (
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto -mx-0 sm:mx-0">
                                 <table className="min-w-full divide-y divide-slate-100">
                                     <thead>
                                         <tr>
-                                            <th className={`${tableHeaderClass} w-20`}>POS</th>
-                                            <th className={`${tableHeaderClass}`}>Tuote / Malli</th>
-                                            <th className={`${tableHeaderClass}`}>Mitat (mm)</th>
-                                            <th className={`${tableHeaderClass}`}>Ominaisuudet</th>
+                                            <th className={`${tableHeaderClass} min-w-[80px]`}>POS</th>
+                                            <th className={`${tableHeaderClass} min-w-[140px]`}>Tuote</th>
+                                            <th className={`${tableHeaderClass} min-w-[140px]`}>Mitat (mm)</th>
+                                            <th className={`${tableHeaderClass} min-w-[180px]`}>Ominaisuudet</th>
                                             <th className={`${tableHeaderClass} text-right w-24`}>Määrä</th>
                                             <th className={`${tableHeaderClass} text-right w-32`}>à Hinta</th>
                                             <th className={`${tableHeaderClass} text-right w-32`}>Yhteensä</th>
@@ -211,7 +210,7 @@ const ProductsTab: React.FC = () => {
                                                     <input 
                                                         value={item.tunnus}
                                                         onChange={(e) => updateProduct(section.id, item.id, { tunnus: e.target.value })}
-                                                        className={`${inputClass} font-bold text-center bg-slate-50 focus:bg-white`}
+                                                        className={`${inputClass} font-bold text-center bg-slate-50 focus:bg-white rounded`}
                                                         placeholder="001"
                                                     />
                                                 </td>
@@ -220,7 +219,7 @@ const ProductsTab: React.FC = () => {
                                                         value={item.manufacturer || ''}
                                                         onChange={(e) => updateProduct(section.id, item.id, { manufacturer: e.target.value })}
                                                         className={inputClass}
-                                                        placeholder="Malli / Valmistaja"
+                                                        placeholder="Malli"
                                                     />
                                                 </td>
                                                 <td className="px-4 py-3 align-top">
@@ -248,17 +247,17 @@ const ProductsTab: React.FC = () => {
                                                             <input 
                                                                 value={item.frameInnerColor || ''}
                                                                 onChange={(e) => updateProduct(section.id, item.id, { frameInnerColor: e.target.value })}
-                                                                className={`${inputClass} text-xs py-1 h-7`}
+                                                                className={`${inputClass} text-xs py-1 h-7 bg-slate-50`}
                                                                 placeholder="Sisäväri"
                                                             />
                                                             <input 
                                                                 value={item.frameOuterColor || ''}
                                                                 onChange={(e) => updateProduct(section.id, item.id, { frameOuterColor: e.target.value })}
-                                                                className={`${inputClass} text-xs py-1 h-7`}
+                                                                className={`${inputClass} text-xs py-1 h-7 bg-slate-50`}
                                                                 placeholder="Ulkoväri"
                                                             />
                                                         </div>
-                                                        <div className="flex gap-2 text-xs text-slate-500 pl-2">
+                                                        <div className="flex gap-2 text-xs text-slate-500 pl-1 whitespace-nowrap">
                                                             <span>U: {item.uValue}</span>
                                                             <span className="text-slate-300">|</span>
                                                             <span>{isWindows ? item.glassType : (item.lock?.type || 'Vakio')}</span>
@@ -270,7 +269,7 @@ const ProductsTab: React.FC = () => {
                                                         type="number"
                                                         value={item.quantity}
                                                         onChange={(e) => updateProduct(section.id, item.id, { quantity: Number(e.target.value) })}
-                                                        className={`${inputClass} text-right font-bold`}
+                                                        className={`${inputClass} text-right font-bold bg-blue-50/30`}
                                                     />
                                                 </td>
                                                 <td className="px-4 py-3 align-top">
@@ -284,15 +283,15 @@ const ProductsTab: React.FC = () => {
                                                         <span className="absolute right-2 top-2 text-slate-400 text-xs">€</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-3 align-top text-right font-bold text-slate-900 pt-3">
+                                                <td className="px-4 py-3 align-top text-right font-bold text-slate-900 pt-3 whitespace-nowrap">
                                                     {(item.totalPrice || 0).toLocaleString('fi-FI')} €
                                                 </td>
                                                 <td className="px-4 py-3 align-middle text-right">
                                                     <button 
                                                         onClick={() => removeProduct(section.id, item.id)}
-                                                        className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                                        className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-2 rounded transition-colors"
                                                     >
-                                                        <Trash2 size={16} />
+                                                        <Trash2 size={18} />
                                                     </button>
                                                 </td>
                                             </tr>
@@ -304,12 +303,12 @@ const ProductsTab: React.FC = () => {
 
                         {/* Generic Table */}
                         {!isSpecial && section.items.length > 0 && (
-                             <div className="overflow-x-auto">
+                             <div className="overflow-x-auto -mx-0 sm:mx-0">
                                 <table className="min-w-full divide-y divide-slate-100">
                                     <thead>
                                         <tr>
-                                            <th className={`${tableHeaderClass} w-1/4`}>Tuote / Nimike</th>
-                                            <th className={`${tableHeaderClass} w-1/3`}>Tarkenne</th>
+                                            <th className={`${tableHeaderClass} min-w-[160px]`}>Tuote / Nimike</th>
+                                            <th className={`${tableHeaderClass} min-w-[200px]`}>Tarkenne</th>
                                             <th className={`${tableHeaderClass} text-right w-24`}>Määrä</th>
                                             <th className={`${tableHeaderClass} w-24`}>Yksikkö</th>
                                             <th className={`${tableHeaderClass} text-right w-32`}>à Hinta</th>
@@ -341,7 +340,7 @@ const ProductsTab: React.FC = () => {
                                                         type="number"
                                                         value={item.quantity}
                                                         onChange={(e) => updateProduct(section.id, item.id, { quantity: Number(e.target.value) })}
-                                                        className={`${inputClass} text-right font-bold`}
+                                                        className={`${inputClass} text-right font-bold bg-blue-50/30`}
                                                     />
                                                 </td>
                                                 <td className="px-4 py-2">
@@ -370,15 +369,15 @@ const ProductsTab: React.FC = () => {
                                                         <span className="absolute right-2 top-2 text-slate-400 text-xs">€</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-2 text-right font-bold text-slate-900">
+                                                <td className="px-4 py-2 text-right font-bold text-slate-900 whitespace-nowrap">
                                                     {(item.totalPrice || 0).toLocaleString('fi-FI')} €
                                                 </td>
                                                 <td className="px-4 py-2 text-right">
                                                     <button 
                                                         onClick={() => removeProduct(section.id, item.id)}
-                                                        className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                                        className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-2 rounded transition-colors"
                                                     >
-                                                        <Trash2 size={16} />
+                                                        <Trash2 size={18} />
                                                     </button>
                                                 </td>
                                             </tr>

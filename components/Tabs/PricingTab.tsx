@@ -73,9 +73,33 @@ export const PricingTab: React.FC = () => {
                     <div className="text-sm font-bold text-blue-600">Myynti: {pricing.breakdown.elements.sellingPrice.toFixed(0)} €</div>
                 </div>
             </div>
+            
+            {/* Ristikot */}
+            <div className="grid grid-cols-12 gap-4 items-center bg-slate-50/50 p-2 -mx-2 rounded-lg">
+                <div className="col-span-4">
+                <label className="font-bold text-slate-700 block">Ristikot</label>
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide">Tehdastuotanto</p>
+                </div>
+                <div className="col-span-3">
+                    <div className="relative">
+                        <input
+                            type="number"
+                            step="0.5"
+                            value={quotation.pricing.categoryMarkups.trusses}
+                            onChange={(e) => updateCategoryMarkup('trusses', Number(e.target.value))}
+                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        />
+                        <span className="absolute right-2 top-2.5 text-xs text-slate-400">%</span>
+                    </div>
+                </div>
+                <div className="col-span-5 text-right space-y-0.5">
+                    <div className="text-xs text-slate-500">Osto: {pricing.breakdown.trusses.cost.toFixed(0)} €</div>
+                    <div className="text-sm font-bold text-blue-600">Myynti: {pricing.breakdown.trusses.sellingPrice.toFixed(0)} €</div>
+                </div>
+            </div>
 
             {/* Ikkunat ja ovet */}
-            <div className="grid grid-cols-12 gap-4 items-center bg-slate-50/50 p-2 -mx-2 rounded-lg">
+            <div className="grid grid-cols-12 gap-4 items-center">
                 <div className="col-span-4">
                 <label className="font-bold text-slate-700 block">Ikkunat & Ovet</label>
                 <p className="text-[10px] text-slate-400 uppercase tracking-wide">Pihla Varma</p>
@@ -99,7 +123,7 @@ export const PricingTab: React.FC = () => {
             </div>
 
             {/* Työmaatoimitukset */}
-            <div className="grid grid-cols-12 gap-4 items-center">
+            <div className="grid grid-cols-12 gap-4 items-center bg-slate-50/50 p-2 -mx-2 rounded-lg">
                 <div className="col-span-4">
                 <label className="font-bold text-slate-700 block">Työmaatoimitus</label>
                 <p className="text-[10px] text-slate-400 uppercase tracking-wide">Irtotavara</p>
@@ -123,7 +147,7 @@ export const PricingTab: React.FC = () => {
             </div>
 
             {/* Asennus */}
-            <div className="grid grid-cols-12 gap-4 items-center bg-slate-50/50 p-2 -mx-2 rounded-lg">
+            <div className="grid grid-cols-12 gap-4 items-center">
                 <div className="col-span-4">
                 <label className="font-bold text-slate-700 block">Asennus</label>
                 <p className="text-[10px] text-slate-400 uppercase tracking-wide">Työkustannukset</p>
@@ -147,7 +171,7 @@ export const PricingTab: React.FC = () => {
             </div>
 
             {/* Kuljetus */}
-            <div className="grid grid-cols-12 gap-4 items-center">
+            <div className="grid grid-cols-12 gap-4 items-center bg-slate-50/50 p-2 -mx-2 rounded-lg">
                 <div className="col-span-4">
                 <label className="font-bold text-slate-700 block">Kuljetus</label>
                 <p className="text-[10px] text-slate-400 uppercase tracking-wide">Rahti & Nostot</p>
@@ -171,7 +195,7 @@ export const PricingTab: React.FC = () => {
             </div>
 
              {/* Design */}
-             <div className="grid grid-cols-12 gap-4 items-center bg-slate-50/50 p-2 -mx-2 rounded-lg">
+             <div className="grid grid-cols-12 gap-4 items-center">
                 <div className="col-span-4">
                 <label className="font-bold text-slate-700 block">Suunnittelu</label>
                 <p className="text-[10px] text-slate-400 uppercase tracking-wide">Dokumentit</p>
