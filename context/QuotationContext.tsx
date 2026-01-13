@@ -209,12 +209,13 @@ const getInitialState = (): Quotation => ({
     messages: [
         { id: generateId(), timestamp: new Date(Date.now() - 1000 * 60 * 5), author: 'Järjestelmä', text: 'Projekti luotu asiakkaalle Matti Meikäläinen.', type: 'internal' }
     ],
-// FIX: Add missing 'files' property to the initial state to conform to the Quotation type.
     files: [],
     documents: STANDARD_DOCUMENTS.map(d => ({...d})), // Deep copy
     elements: [
         { id: 'section-ext-walls', title: 'Ulkoseinät', order: 1, items: [] },
-        { id: 'section-roof', title: 'Kattorakenteet', order: 2, items: [] }
+        { id: 'section-int-walls', title: 'Väliseinät', order: 2, items: [] },
+        { id: 'section-floor', title: 'Vaakarakenteet', order: 3, items: [] },
+        { id: 'section-roof', title: 'Kattorakenteet', order: 4, items: [] }
     ],
     products: [
        { id: 'windows', title: 'Ikkunat', items: [] },
@@ -349,9 +350,11 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setQuotation(prev => {
       const sectionExists = prev.elements.some(s => s.id === sectionId);
       if (!sectionExists) {
+        // This case is less likely now with predefined sections, but good fallback.
+        const newTitle = sectionId.replace('section-', '').replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
         return {
           ...prev,
-          elements: [...prev.elements, { id: sectionId, title: 'Uusi osio', order: 99, items: [newElement] }]
+          elements: [...prev.elements, { id: sectionId, title: newTitle, order: 99, items: [newElement] }]
         };
       }
       return {

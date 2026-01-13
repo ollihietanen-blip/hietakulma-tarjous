@@ -11,6 +11,7 @@ import ProjectsListView from './components/Views/ProjectsListView';
 import CostTrackingView from './components/Views/CostTrackingView';
 import TrussCalculatorView from './components/Views/TrussCalculatorView';
 import CalendarView from './components/Views/CalendarView';
+import ContractView from './components/Views/ContractView';
 import { Menu } from 'lucide-react';
 
 // Added 'messages'
@@ -27,7 +28,8 @@ function App() {
     'element_calculator', 
     'truss_calculator', 
     'quotation', 
-    'cost_tracking'
+    'cost_tracking',
+    'contract_view'
   ];
   const isProjectActive = projectViews.includes(currentView);
 
@@ -116,6 +118,11 @@ function App() {
            {currentView === 'cost_tracking' && (
                <div className="flex-1 h-screen">
                    <CostTrackingView />
+               </div>
+           )}
+           {currentView === 'contract_view' && (
+               <div className="flex-1 bg-hieta-light">
+                   <ContractView />
                </div>
            )}
         </div>

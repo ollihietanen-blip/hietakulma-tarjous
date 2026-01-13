@@ -21,10 +21,7 @@ interface NavigationProps {
 const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
   const { quotation } = useQuotation();
   
-  // Logic to show Contract tab
-  const showContract = ['sent', 'accepted', 'rejected'].includes(quotation.status);
-
-  const tabs: { id: TabType; label: string; icon: React.ReactNode; hidden?: boolean }[] = [
+  const tabs: { id: TabType; label: string; icon: React.ReactNode; }[] = [
     { id: 'documents', label: 'Dokumentit', icon: <FileText size={18} /> },
     { id: 'elements', label: 'Tehdastuotanto', icon: <Box size={18} /> },
     { id: 'products', label: 'Työmaatoimitukset', icon: <Grid size={18} /> },
@@ -33,7 +30,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
     { id: 'pricing', label: 'Hinnoittelu', icon: <Euro size={18} /> },
     { id: 'messages', label: 'Viestit', icon: <MessageSquare size={18} /> },
     { id: 'summary', label: 'Yhteenveto', icon: <CheckCircle size={18} /> },
-    { id: 'contract', label: 'Sopimus', icon: <FileSignature size={18} />, hidden: !showContract },
+    { id: 'contract', label: 'Sopimus', icon: <FileSignature size={18} /> },
   ];
 
   return (
@@ -48,7 +45,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
             scrollbar-width: none;
           }
         `}</style>
-        {tabs.filter(t => !t.hidden).map((tab) => {
+        {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
