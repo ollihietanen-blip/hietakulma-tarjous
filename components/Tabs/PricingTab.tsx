@@ -2,243 +2,282 @@ import React from 'react';
 import { useQuotation } from '../../context/QuotationContext';
 import PaymentScheduleEditor from '../PaymentSchedule/PaymentScheduleEditor';
 
-const PricingTab: React.FC = () => {
-  const { pricing, updatePricingSettings, quotation } = useQuotation();
+export const PricingTab: React.FC = () => {
+  const { quotation, updatePricingSettings, pricing } = useQuotation();
   
-  const markupError = pricing.markupPercentage < 0;
-  const commissionError = pricing.commissionPercentage < 0;
+  const updateCategoryMarkup = (category: string, value: number) => {
+    updatePricingSettings({
+      categoryMarkups: {
+        ...quotation.pricing.categoryMarkups,
+        [category]: value
+      }
+    });
+  };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-20">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Hinnoittelu</h1>
-        <p className="text-gray-500">
-          Aseta kateprosentti ja mahdollinen provisio. Hinnat lasketaan automaattisesti verottomana (ALV 0%), verot lisätään loppusummaan.
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">Hinnoittelu</h1>
+        <p className="text-slate-500">
+          Määritä tuoteryhmäkohtaiset katekertoimet. Hinnat lasketaan automaattisesti verottomana (ALV 0%), verot lisätään loppusummaan.
         </p>
       </div>
       
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm">
-          <div className="text-xs text-gray-500 mb-1 font-semibold uppercase tracking-wide">Tehdastuotanto</div>
-          <div className="text-xl font-bold text-gray-900">
-            {(pricing.elementsTotal || 0).toLocaleString('fi-FI', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })} €
+      {/* Tavoite-kate näkyvästi ylhäällä */}
+      <div className="bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 rounded-xl p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900">Toteutuva kokonaiskate</h3>
+            <p className="text-sm text-slate-600 mt-1 font-medium">
+              Tavoite: <span className="text-green-700">25-30%</span>
+            </p>
           </div>
-          <div className="text-xs text-gray-400 mt-1">
-            {quotation.elements.reduce((sum, s) => sum + s.items.length, 0)} riviä
+          <div className="text-right flex flex-col items-center sm:items-end">
+            <div className="text-4xl font-bold text-green-600 tracking-tight">
+              {pricing.profitPercent.toFixed(1)} %
+            </div>
+            <div className="text-sm font-bold text-slate-600 mt-1 bg-white/50 px-2 py-1 rounded">
+              {pricing.profitAmount.toFixed(2)} € kate
+            </div>
           </div>
-        </div>
-        
-        <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm">
-          <div className="text-xs text-gray-500 mb-1 font-semibold uppercase tracking-wide">Työmaatoimitukset</div>
-          <div className="text-xl font-bold text-gray-900">
-            {(pricing.productsTotal || 0).toLocaleString('fi-FI', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })} €
-          </div>
-          <div className="text-xs text-gray-400 mt-1">
-            {quotation.products.reduce((sum, s) => sum + s.items.length, 0)} riviä
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm">
-          <div className="text-xs text-gray-500 mb-1 font-semibold uppercase tracking-wide">Suunnittelu</div>
-          <div className="text-xl font-bold text-gray-900">
-            {(pricing.documentsTotal || 0).toLocaleString('fi-FI', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })} €
-          </div>
-          <div className="text-xs text-gray-400 mt-1">
-            {quotation.documents.filter(d => d.included).length} valittu
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm ring-1 ring-blue-100">
-          <div className="text-xs text-blue-600 mb-1 font-semibold uppercase tracking-wide">Asennus</div>
-          <div className="text-xl font-bold text-blue-900">
-            {(pricing.installationTotal || 0).toLocaleString('fi-FI', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })} €
-          </div>
-          <div className="text-xs text-blue-400 mt-1 truncate">
-             {quotation.delivery.assemblyLevelId === 'material-only' ? 'Ei asennusta' : 
-              quotation.delivery.assemblyLevelId === 'shell-and-roof' ? 'Runkovalmis' : 'Ulkovalmis'}
-          </div>
-        </div>
-        
-        <div className="bg-slate-800 rounded-lg border border-slate-700 p-5 shadow-sm text-white">
-          <div className="text-xs text-slate-400 mb-1 font-semibold uppercase tracking-wide">Omakustannehinta</div>
-          <div className="text-xl font-bold text-white">
-            {(pricing.costPrice || 0).toLocaleString('fi-FI', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })} €
-          </div>
-          <div className="text-xs text-slate-400 mt-1">alv 0%</div>
         </div>
       </div>
-      
-      {/* Markup Calculation */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-gray-900 mb-6 border-b pb-2">Katelaskenta</h2>
-        
-        <div className="space-y-4 max-w-3xl">
-          {/* Cost Price */}
-          <div className="flex items-center justify-between py-3 border-b border-gray-100">
-            <span className="text-gray-700 font-medium">Omakustannehinta (alv 0%)</span>
-            <span className="text-lg font-semibold text-gray-900">
-              {(pricing.costPrice || 0).toLocaleString('fi-FI', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              })} €
-            </span>
-          </div>
-          
-          {/* Markup Input */}
-          <div className="flex items-center justify-between py-3">
-            <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-4">
-                <label className="text-gray-700 font-medium">Kate (wsum)</label>
-                <div className="relative rounded-md shadow-sm">
-                    <input
-                    type="number"
-                    step="0.1"
-                    value={pricing.markupPercentage}
-                    onChange={(e) => updatePricingSettings({ markupPercentage: Number(e.target.value) })}
-                    className={`block w-24 pl-3 pr-8 py-1.5 border rounded-md focus:ring-blue-500 focus:border-blue-500 text-right font-medium bg-white text-gray-900 shadow-sm ${markupError ? 'border-red-300 focus:border-red-500' : 'border-gray-300'}`}
-                    />
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">%</span>
-                    </div>
-                </div>
-                </div>
-                {markupError && <span className="text-xs text-red-500">Pitää olla &ge; 0</span>}
-            </div>
-            <span className="text-lg font-semibold text-green-600">
-              + {(pricing.markupAmount || 0).toLocaleString('fi-FI', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              })} €
-            </span>
-          </div>
-          
-          {/* Commission Input */}
-          <div className="flex items-center justify-between py-3">
-            <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-4">
-                <label className="text-gray-700 font-medium">Provisio</label>
-                <div className="relative rounded-md shadow-sm">
-                    <input
-                    type="number"
-                    step="0.1"
-                    value={pricing.commissionPercentage}
-                    onChange={(e) => updatePricingSettings({ commissionPercentage: Number(e.target.value) })}
-                    className={`block w-24 pl-3 pr-8 py-1.5 border rounded-md focus:ring-blue-500 focus:border-blue-500 text-right font-medium bg-white text-gray-900 shadow-sm ${commissionError ? 'border-red-300 focus:border-red-500' : 'border-gray-300'}`}
-                    />
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">%</span>
-                    </div>
-                </div>
-                </div>
-                {commissionError && <span className="text-xs text-red-500">Pitää olla &ge; 0</span>}
-            </div>
-            <span className="text-lg font-semibold text-green-600">
-              + {(pricing.commissionAmount || 0).toLocaleString('fi-FI', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              })} €
-            </span>
-          </div>
-          
-          {/* Subtotal */}
-          <div className="flex items-center justify-between py-3 border-t-2 border-gray-200 mt-2">
-            <span className="text-gray-900 font-bold text-lg">Välisumma (alv 0%)</span>
-            <span className="text-xl font-bold text-gray-900">
-              {(pricing.subtotal || 0).toLocaleString('fi-FI', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              })} €
-            </span>
-          </div>
-          
-          {/* VAT Treatment Selection */}
-          <div className="py-4 border-b border-gray-200">
-            <label className="block text-gray-700 font-medium mb-3">ALV-käsittely</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label className={`
-                    relative flex cursor-pointer rounded-lg px-5 py-4 shadow-sm border focus:outline-none
-                    ${pricing.vatMode === 'standard' ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-500' : 'bg-white border-gray-200 hover:border-gray-300'}
-                `}>
-                    <input 
-                        type="radio" 
-                        name="vat-mode" 
-                        value="standard" 
-                        checked={pricing.vatMode === 'standard'}
-                        onChange={() => updatePricingSettings({ vatMode: 'standard' })}
-                        className="sr-only" 
-                    />
-                    <div className="flex w-full items-center justify-between">
-                        <div className="flex items-center">
-                            <div className="text-sm">
-                                <p className={`font-medium ${pricing.vatMode === 'standard' ? 'text-blue-900' : 'text-gray-900'}`}>
-                                    Normaali
-                                </p>
-                                <p className={`text-xs ${pricing.vatMode === 'standard' ? 'text-blue-700' : 'text-gray-500'}`}>
-                                    ALV 25,5 %
-                                </p>
-                            </div>
-                        </div>
-                        {pricing.vatMode === 'standard' && (
-                            <div className="text-blue-600">
-                                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                            </div>
-                        )}
-                    </div>
-                </label>
 
-                <label className={`
-                    relative flex cursor-pointer rounded-lg px-5 py-4 shadow-sm border focus:outline-none
-                    ${pricing.vatMode === 'construction_service' ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-500' : 'bg-white border-gray-200 hover:border-gray-300'}
-                `}>
-                    <input 
-                        type="radio" 
-                        name="vat-mode" 
-                        value="construction_service" 
-                        checked={pricing.vatMode === 'construction_service'}
-                        onChange={() => updatePricingSettings({ vatMode: 'construction_service' })}
-                        className="sr-only" 
-                    />
-                    <div className="flex w-full items-center justify-between">
-                         <div className="flex items-center">
-                            <div className="text-sm">
-                                <p className={`font-medium ${pricing.vatMode === 'construction_service' ? 'text-blue-900' : 'text-gray-900'}`}>
-                                    Rakentamispalvelu
-                                </p>
-                                <p className={`text-xs ${pricing.vatMode === 'construction_service' ? 'text-blue-700' : 'text-gray-500'}`}>
-                                    AVL 8c §
-                                </p>
-                            </div>
-                         </div>
-                         {pricing.vatMode === 'construction_service' && (
-                            <div className="text-blue-600">
-                                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                            </div>
-                        )}
-                    </div>
-                </label>
-            </div>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
+        {/* Left Column: Category Markups */}
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <h3 className="text-lg font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Katekertoimet tuoteryhmittäin</h3>
+            
+            <div className="space-y-6">
+            {/* Elementit */}
+            <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="col-span-4">
+                <label className="font-bold text-slate-700 block">Elementit</label>
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide">Tehdastuotanto</p>
+                </div>
+                <div className="col-span-3">
+                <div className="relative">
+                    <input
+                        type="number"
+                        step="0.5"
+                        value={quotation.pricing.categoryMarkups.elements}
+                        onChange={(e) => updateCategoryMarkup('elements', Number(e.target.value))}
+                        className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                    />
+                    <span className="absolute right-2 top-2.5 text-xs text-slate-400">%</span>
+                </div>
+                </div>
+                <div className="col-span-5 text-right space-y-0.5">
+                    <div className="text-xs text-slate-500">Osto: {pricing.breakdown.elements.cost.toFixed(0)} €</div>
+                    <div className="text-sm font-bold text-blue-600">Myynti: {pricing.breakdown.elements.sellingPrice.toFixed(0)} €</div>
+                </div>
+            </div>
+
+            {/* Ikkunat ja ovet */}
+            <div className="grid grid-cols-12 gap-4 items-center bg-slate-50/50 p-2 -mx-2 rounded-lg">
+                <div className="col-span-4">
+                <label className="font-bold text-slate-700 block">Ikkunat & Ovet</label>
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide">Pihla Varma</p>
+                </div>
+                <div className="col-span-3">
+                    <div className="relative">
+                        <input
+                            type="number"
+                            step="0.5"
+                            value={quotation.pricing.categoryMarkups.windowsDoors}
+                            onChange={(e) => updateCategoryMarkup('windowsDoors', Number(e.target.value))}
+                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        />
+                        <span className="absolute right-2 top-2.5 text-xs text-slate-400">%</span>
+                    </div>
+                </div>
+                <div className="col-span-5 text-right space-y-0.5">
+                    <div className="text-xs text-slate-500">Osto: {pricing.breakdown.windowsDoors.cost.toFixed(0)} €</div>
+                    <div className="text-sm font-bold text-blue-600">Myynti: {pricing.breakdown.windowsDoors.sellingPrice.toFixed(0)} €</div>
+                </div>
+            </div>
+
+            {/* Työmaatoimitukset */}
+            <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="col-span-4">
+                <label className="font-bold text-slate-700 block">Työmaatoimitus</label>
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide">Irtotavara</p>
+                </div>
+                <div className="col-span-3">
+                    <div className="relative">
+                        <input
+                            type="number"
+                            step="0.5"
+                            value={quotation.pricing.categoryMarkups.worksiteDeliveries}
+                            onChange={(e) => updateCategoryMarkup('worksiteDeliveries', Number(e.target.value))}
+                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        />
+                        <span className="absolute right-2 top-2.5 text-xs text-slate-400">%</span>
+                    </div>
+                </div>
+                <div className="col-span-5 text-right space-y-0.5">
+                    <div className="text-xs text-slate-500">Osto: {pricing.breakdown.worksiteDeliveries.cost.toFixed(0)} €</div>
+                    <div className="text-sm font-bold text-blue-600">Myynti: {pricing.breakdown.worksiteDeliveries.sellingPrice.toFixed(0)} €</div>
+                </div>
+            </div>
+
+            {/* Asennus */}
+            <div className="grid grid-cols-12 gap-4 items-center bg-slate-50/50 p-2 -mx-2 rounded-lg">
+                <div className="col-span-4">
+                <label className="font-bold text-slate-700 block">Asennus</label>
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide">Työkustannukset</p>
+                </div>
+                <div className="col-span-3">
+                    <div className="relative">
+                        <input
+                            type="number"
+                            step="0.5"
+                            value={quotation.pricing.categoryMarkups.installation}
+                            onChange={(e) => updateCategoryMarkup('installation', Number(e.target.value))}
+                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        />
+                        <span className="absolute right-2 top-2.5 text-xs text-slate-400">%</span>
+                    </div>
+                </div>
+                <div className="col-span-5 text-right space-y-0.5">
+                    <div className="text-xs text-slate-500">Osto: {pricing.breakdown.installation.cost.toFixed(0)} €</div>
+                    <div className="text-sm font-bold text-blue-600">Myynti: {pricing.breakdown.installation.sellingPrice.toFixed(0)} €</div>
+                </div>
+            </div>
+
+            {/* Kuljetus */}
+            <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="col-span-4">
+                <label className="font-bold text-slate-700 block">Kuljetus</label>
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide">Rahti & Nostot</p>
+                </div>
+                <div className="col-span-3">
+                    <div className="relative">
+                        <input
+                            type="number"
+                            step="0.5"
+                            value={quotation.pricing.categoryMarkups.transportation}
+                            onChange={(e) => updateCategoryMarkup('transportation', Number(e.target.value))}
+                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        />
+                        <span className="absolute right-2 top-2.5 text-xs text-slate-400">%</span>
+                    </div>
+                </div>
+                <div className="col-span-5 text-right space-y-0.5">
+                    <div className="text-xs text-slate-500">Osto: {pricing.breakdown.transportation.cost.toFixed(0)} €</div>
+                    <div className="text-sm font-bold text-blue-600">Myynti: {pricing.breakdown.transportation.sellingPrice.toFixed(0)} €</div>
+                </div>
+            </div>
+
+             {/* Design */}
+             <div className="grid grid-cols-12 gap-4 items-center bg-slate-50/50 p-2 -mx-2 rounded-lg">
+                <div className="col-span-4">
+                <label className="font-bold text-slate-700 block">Suunnittelu</label>
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide">Dokumentit</p>
+                </div>
+                <div className="col-span-3">
+                    <div className="relative">
+                        <input
+                            type="number"
+                            step="0.5"
+                            value={quotation.pricing.categoryMarkups.design}
+                            onChange={(e) => updateCategoryMarkup('design', Number(e.target.value))}
+                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        />
+                        <span className="absolute right-2 top-2.5 text-xs text-slate-400">%</span>
+                    </div>
+                </div>
+                <div className="col-span-5 text-right space-y-0.5">
+                    <div className="text-xs text-slate-500">Osto: {pricing.breakdown.design.cost.toFixed(0)} €</div>
+                    <div className="text-sm font-bold text-blue-600">Myynti: {pricing.breakdown.design.sellingPrice.toFixed(0)} €</div>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        {/* Right Column: Commission & Totals */}
+        <div className="space-y-6">
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                <h3 className="text-lg font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Provisio & ALV</h3>
+                <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-0.5">
+                        Provisio-%
+                        </label>
+                        <p className="text-xs text-slate-500">Koko kauppasummasta</p>
+                    </div>
+                    <div className="relative w-24">
+                        <input
+                        type="number"
+                        step="0.1"
+                        value={quotation.pricing.commissionPercentage}
+                        onChange={(e) => updatePricingSettings({ commissionPercentage: Number(e.target.value) })}
+                        className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        />
+                        <span className="absolute right-2 top-2.5 text-xs text-slate-400">%</span>
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                    ALV-tila
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            onClick={() => updatePricingSettings({ vatMode: 'standard' })}
+                            className={`px-3 py-2 text-sm font-medium rounded-lg border transition-all ${quotation.pricing.vatMode === 'standard' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                        >
+                            Kuluttaja (25.5%)
+                        </button>
+                        <button
+                            onClick={() => updatePricingSettings({ vatMode: 'construction_service' })}
+                            className={`px-3 py-2 text-sm font-medium rounded-lg border transition-all ${quotation.pricing.vatMode === 'construction_service' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                        >
+                            Käännetty ALV
+                        </button>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+            {/* Yhteenveto */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 text-white shadow-lg">
+                <h3 className="text-lg font-bold text-white mb-4 border-b border-slate-700 pb-2">Hinnoittelun yhteenveto</h3>
+                <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                    <span className="text-slate-400">Ostohinta yhteensä:</span>
+                    <span className="font-medium text-slate-200">{pricing.materialCostTotal.toFixed(2)} €</span>
+                </div>
+                
+                <div className="flex justify-between">
+                    <span className="text-slate-400">Myyntihinta (ilman ALV):</span>
+                    <span className="font-bold text-white text-lg">{pricing.sellingPriceExVat.toFixed(2)} €</span>
+                </div>
+
+                <div className="border-t border-slate-700 my-2 pt-2">
+                     <div className="flex justify-between">
+                        <span className="text-slate-400">Kate (€):</span>
+                        <span className="font-bold text-green-400">{pricing.profitAmount.toFixed(2)} €</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                        <span className="text-slate-400">Kate (%):</span>
+                        <span className="font-bold text-green-400">{pricing.profitPercent.toFixed(1)} %</span>
+                    </div>
+                </div>
+                
+                <div className="flex justify-between pt-2">
+                    <span className="text-slate-400">ALV {pricing.vatPercentage}%:</span>
+                    <span className="font-medium text-slate-200">{pricing.vatAmount.toFixed(2)} €</span>
+                </div>
+                
+                <div className="flex justify-between items-center pt-4 mt-2 border-t border-slate-700">
+                    <span className="text-slate-400 font-bold uppercase tracking-wider">Kokonaishinta</span>
+                    <span className="text-2xl font-bold text-blue-400">{pricing.totalWithVat.toFixed(2)} €</span>
+                </div>
+                </div>
+            </div>
         </div>
       </div>
       

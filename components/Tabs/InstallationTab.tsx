@@ -80,8 +80,8 @@ const InstallationTab: React.FC = () => {
       return null;
   };
 
-  // Calculate Base Price for Material (Elements + Products)
-  const materialCost = (pricing.elementsTotal || 0) + (pricing.productsTotal || 0);
+  // Calculate Base Price for Material (Elements + Products Cost)
+  const materialCost = (pricing.elementsCost || 0) + (pricing.productsCost || 0);
   const currentLevel = ASSEMBLY_LEVELS.find(l => l.id === quotation.delivery.assemblyLevelId) || ASSEMBLY_LEVELS[1];
   
   const handleAddCustomItem = () => {
@@ -137,6 +137,7 @@ const InstallationTab: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {ASSEMBLY_LEVELS.map((level) => {
             const isSelected = quotation.delivery.assemblyLevelId === level.id;
+            // Note: This logic assumes materialCost is accurate. 
             const estimatedTotal = materialCost * level.pricing.baseMultiplier;
             const installationShare = estimatedTotal - materialCost;
 
@@ -178,7 +179,7 @@ const InstallationTab: React.FC = () => {
 
                         <div className="space-y-4 mb-6">
                             <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                                <div className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Arvioitu asennushinta</div>
+                                <div className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Arvioitu asennuskustannus</div>
                                 <div className={`text-xl font-bold ${installationShare > 0 ? 'text-blue-700' : 'text-slate-700'}`}>
                                     +{installationShare.toLocaleString('fi-FI', { maximumFractionDigits: 0 })} €
                                 </div>

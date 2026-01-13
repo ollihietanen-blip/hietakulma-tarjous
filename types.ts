@@ -1,5 +1,3 @@
-
-
 export interface Quotation {
   id: string;
   createdAt: Date;
@@ -20,7 +18,9 @@ export interface Project {
   number: string;
   name: string;
   address: string;
-  buildingType: 'loma-asunto' | 'omakotitalo' | 'varastohalli' | 'sauna' | 'rivitalo';
+  postalCode?: string;
+  city?: string;
+  buildingType: 'loma-asunto' | 'omakotitalo' | 'varastohalli' | 'sauna' | 'rivitalo' | 'paritalo';
   deliveryWeek?: string;
   offerDate: Date;
 }
@@ -131,23 +131,64 @@ export interface ProductItem {
 
 export type VatMode = 'standard' | 'construction_service';
 
+export interface CategoryMarkups {
+  elements: number;
+  windowsDoors: number;
+  worksiteDeliveries: number;
+  installation: number;
+  transportation: number;
+  design: number;
+}
+
+export interface PricingCategoryBreakdown {
+  cost: number;
+  markup: number;
+  sellingPrice: number;
+  profit: number;
+}
+
 export interface PricingCalculation {
-  costPrice: number;
-  markupPercentage: number;
-  markupAmount: number;
+  // Settings
+  categoryMarkups: CategoryMarkups;
   commissionPercentage: number;
-  commissionAmount: number;
-  subtotal: number;
   vatMode: VatMode;
+  
+  // Totals (Cost Basis)
+  elementsCost: number;
+  productsCost: number; // Split into windows/doors and generic later
+  documentsCost: number;
+  installationCost: number;
+  transportationCost: number;
+  
+  // Totals (Sales Basis)
+  materialCostTotal: number;
+  sellingPriceExVat: number;
+  profitAmount: number;
+  profitPercent: number;
+  
   vatPercentage: number;
   vatAmount: number;
   totalWithVat: number;
-  elementsTotal: number;
-  productsTotal: number;
-  documentsTotal: number;
-  installationTotal: number;
-  transportationTotal: number; // Kuljetuskustannukset
+
+  // Detailed Breakdown for UI
+  breakdown: {
+    elements: PricingCategoryBreakdown;
+    windowsDoors: PricingCategoryBreakdown;
+    worksiteDeliveries: PricingCategoryBreakdown;
+    installation: PricingCategoryBreakdown;
+    transportation: PricingCategoryBreakdown;
+    design: PricingCategoryBreakdown;
+  };
 }
+
+export const DEFAULT_CATEGORY_MARKUPS: CategoryMarkups = {
+  elements: 22.0,
+  windowsDoors: 18.0,
+  worksiteDeliveries: 15.0,
+  installation: 28.0,
+  transportation: 12.0,
+  design: 25.0
+};
 
 export interface PaymentMilestone {
   id: string;
@@ -482,47 +523,6 @@ export const ASSEMBLY_LEVELS: AssemblyLevel[] = [
   }
 ];
 
-// Helper to calculate pricing
-export function calculatePricing(
-  elementsTotal: number,
-  productsTotal: number,
-  documentsTotal: number,
-  installationTotal: number,
-  transportationTotal: number, 
-  markupPercentage: number = 25,
-  commissionPercentage: number = 0,
-  vatMode: VatMode = 'standard'
-): PricingCalculation {
-  const costPrice = elementsTotal + productsTotal + documentsTotal + installationTotal + transportationTotal;
-  const markupAmount = costPrice * (markupPercentage / 100);
-  const commissionAmount = costPrice * (commissionPercentage / 100);
-  const subtotal = costPrice + markupAmount + commissionAmount;
-  
-  // Determine VAT Percentage based on mode
-  const vatPercentage = vatMode === 'construction_service' ? 0 : 25.5;
-  
-  const vatAmount = subtotal * (vatPercentage / 100);
-  const totalWithVat = subtotal + vatAmount;
-  
-  return {
-    costPrice,
-    markupPercentage,
-    markupAmount,
-    commissionPercentage,
-    commissionAmount,
-    subtotal,
-    vatMode,
-    vatPercentage,
-    vatAmount,
-    totalWithVat,
-    elementsTotal,
-    productsTotal,
-    documentsTotal,
-    installationTotal,
-    transportationTotal
-  };
-}
-
 // Constants
 
 export const STANDARD_DOCUMENTS: DocumentItem[] = [
@@ -554,6 +554,13 @@ export const PAYMENT_SCHEDULE_TEMPLATES = {
     { order: 6, description: 'Erääntyy kun kohde toimitussopimuksen mukaisesti valmiina', trigger: 'completion', percentage: 10 }
   ],
   'omakotitalo': [
+    { order: 1, description: 'Erääntyy kun toimitussopimus on allekirjoitettu', trigger: 'signing', percentage: 25 },
+    { order: 2, description: 'Erääntyy 7 vrk. ennen kuin valmistus alkaa tehtaalla', trigger: 'pre-production', percentage: 25 },
+    { order: 3, description: 'Erääntyy kun elementit valmiina tehtaalla', trigger: 'factory-ready', percentage: 20 },
+    { order: 4, description: 'Erääntyy kun asennus alkaa työmaalla', trigger: 'installation-start', percentage: 20 },
+    { order: 5, description: 'Erääntyy kun kohde toimitussopimuksen mukaisesti valmiina', trigger: 'completion', percentage: 10 }
+  ],
+  'paritalo': [
     { order: 1, description: 'Erääntyy kun toimitussopimus on allekirjoitettu', trigger: 'signing', percentage: 25 },
     { order: 2, description: 'Erääntyy 7 vrk. ennen kuin valmistus alkaa tehtaalla', trigger: 'pre-production', percentage: 25 },
     { order: 3, description: 'Erääntyy kun elementit valmiina tehtaalla', trigger: 'factory-ready', percentage: 20 },

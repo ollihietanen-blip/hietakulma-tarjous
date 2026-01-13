@@ -1,40 +1,43 @@
 import React from 'react';
 import { useQuotation } from '../../context/QuotationContext';
-import { FileText, Save, Download, Menu } from 'lucide-react';
+import { Save, ArrowLeft } from 'lucide-react';
 
 const Header: React.FC = () => {
   const { quotation } = useQuotation();
   
   return (
-    <header className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+    <header className="bg-white border-b border-stone-200 sticky top-0 z-50 shadow-[0_2px_10px_rgba(0,0,0,0.03)] px-8 py-3">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between gap-4">
           
-          <div className="flex items-center gap-4">
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-2.5 rounded-xl text-white shadow-lg shadow-blue-200">
-              <FileText size={24} />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 leading-tight tracking-tight">
-                {quotation.project.name || 'Uusi Tarjous'}
-              </h1>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-500 mt-0.5">
-                <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 text-xs font-medium">
-                  {quotation.project.number || '---'}
-                </span>
-                <span className="capitalize">{quotation.project.buildingType}</span>
-              </div>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+                <div className="bg-hieta-sand w-2 h-8 rounded-sm"></div>
+                <div>
+                    <h1 className="text-sm font-semibold text-hieta-black leading-tight uppercase tracking-wide">
+                        {quotation.project.name || 'Nimetön projekti'}
+                    </h1>
+                    <div className="flex items-center gap-2 text-xs text-stone-500 mt-0.5 font-sans">
+                        <span className="font-mono text-stone-400">
+                        {quotation.project.number || '#'}
+                        </span>
+                        <span className="capitalize px-1.5 py-0.5 bg-hieta-sand/30 rounded-sm text-stone-700 font-medium">
+                        {quotation.project.buildingType}
+                        </span>
+                    </div>
+                </div>
             </div>
           </div>
           
-          <div className="flex items-center justify-end gap-2 sm:gap-3 border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-100">
-            <button className="flex-1 sm:flex-none justify-center flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all focus:ring-2 focus:ring-gray-200">
-              <Save size={18} />
+          <div className="flex items-center justify-end gap-3">
+             {/* Status Badge */}
+             <div className="px-3 py-1 rounded-sm text-xs font-bold uppercase tracking-wider bg-stone-100 text-stone-500 border border-stone-200">
+                Luonnos
+             </div>
+
+            <button className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-hieta-black bg-hieta-sand hover:bg-[#dcd0b8] transition-colors rounded-sm shadow-sm active:translate-y-0.5">
+              <Save size={16} />
               <span className="hidden sm:inline">Tallenna</span>
-            </button>
-            <button className="flex-1 sm:flex-none justify-center flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-all shadow-sm focus:ring-2 focus:ring-gray-900 focus:ring-offset-2">
-              <Download size={18} />
-              <span className="hidden sm:inline">Lataa PDF</span>
             </button>
           </div>
         </div>

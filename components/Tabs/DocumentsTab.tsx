@@ -33,9 +33,9 @@ const DocumentsTab: React.FC = () => {
             <p className="text-slate-500">Määritä tarjoukseen sisältyvät suunnitelmat ja niiden hinnat.</p>
          </div>
          <div className="bg-blue-50 px-5 py-4 rounded-xl border border-blue-200 text-right shadow-sm">
-             <div className="text-xs text-blue-600 font-bold uppercase tracking-wide mb-1">Yhteensä</div>
+             <div className="text-xs text-blue-600 font-bold uppercase tracking-wide mb-1">Kustannus</div>
              <div className="text-2xl font-bold text-blue-900">
-                {(pricing.documentsTotal || 0).toLocaleString('fi-FI', { minimumFractionDigits: 2 })} €
+                {(pricing.documentsCost || 0).toLocaleString('fi-FI', { minimumFractionDigits: 2 })} €
              </div>
          </div>
       </div>

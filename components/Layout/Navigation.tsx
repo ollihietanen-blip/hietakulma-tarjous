@@ -30,7 +30,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <nav className="flex overflow-x-auto no-scrollbar py-1 px-4 sm:px-6 lg:px-8 space-x-2 sm:space-x-4" aria-label="Tabs">
+      <nav className="flex overflow-x-auto no-scrollbar pt-2 px-4 sm:px-6 lg:px-8 space-x-1" aria-label="Tabs">
         <style>{`
           .no-scrollbar::-webkit-scrollbar {
             display: none;
@@ -47,14 +47,14 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               className={`
-                whitespace-nowrap py-3 px-3 sm:px-4 border-b-2 font-medium text-sm flex items-center gap-2 transition-all duration-200 select-none
+                whitespace-nowrap py-3 px-4 border-b-2 font-display uppercase tracking-wide text-sm flex items-center gap-2 transition-all duration-200 select-none
                 ${isActive
-                  ? 'border-blue-600 text-blue-700 bg-blue-50/50'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 hover:bg-slate-50'}
+                  ? 'border-hieta-black text-hieta-black bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.02)]'
+                  : 'border-transparent text-stone-500 hover:text-stone-800 hover:border-stone-300 hover:bg-white/50'}
               `}
               aria-current={isActive ? 'page' : undefined}
             >
-              <span className={isActive ? 'text-blue-600' : 'text-slate-400'}>
+              <span className={isActive ? 'text-hieta-blue' : 'text-stone-400'}>
                 {tab.icon}
               </span>
               {tab.label}

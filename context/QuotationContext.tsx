@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   Quotation, 
   PricingCalculation, 
-  calculatePricing, 
+  DEFAULT_CATEGORY_MARKUPS,
   STANDARD_DOCUMENTS, 
   STANDARD_LOGISTICS, 
   STANDARD_EXCLUSIONS,
@@ -23,21 +23,139 @@ const generateId = () => {
 
 // Default Pricing State
 const DEFAULT_PRICING: PricingCalculation = {
-  costPrice: 0,
-  markupPercentage: 25,
-  markupAmount: 0,
-  commissionPercentage: 0,
-  commissionAmount: 0,
-  subtotal: 0,
+  categoryMarkups: { ...DEFAULT_CATEGORY_MARKUPS },
+  commissionPercentage: 4.0,
   vatMode: 'standard',
+  
+  elementsCost: 0,
+  productsCost: 0,
+  documentsCost: 0,
+  installationCost: 0,
+  transportationCost: 0,
+  
+  materialCostTotal: 0,
+  sellingPriceExVat: 0,
+  profitAmount: 0,
+  profitPercent: 0,
+  
   vatPercentage: 25.5,
   vatAmount: 0,
   totalWithVat: 0,
-  elementsTotal: 0,
-  productsTotal: 0,
-  documentsTotal: 0,
-  installationTotal: 0,
-  transportationTotal: 0
+
+  breakdown: {
+    elements: { cost: 0, markup: 0, sellingPrice: 0, profit: 0 },
+    windowsDoors: { cost: 0, markup: 0, sellingPrice: 0, profit: 0 },
+    worksiteDeliveries: { cost: 0, markup: 0, sellingPrice: 0, profit: 0 },
+    installation: { cost: 0, markup: 0, sellingPrice: 0, profit: 0 },
+    transportation: { cost: 0, markup: 0, sellingPrice: 0, profit: 0 },
+    design: { cost: 0, markup: 0, sellingPrice: 0, profit: 0 }
+  }
+};
+
+// Helper to calculate pricing based on margins
+const calculateDetailedPricing = (quotation: Quotation): PricingCalculation => {
+  const settings = quotation.pricing;
+  const commission = settings.commissionPercentage || 4.0;
+  
+  // 1. ELEMENTS (Tehdastuotanto)
+  const elementsCost = quotation.elements.reduce((sum, section) => 
+    sum + section.items.reduce((iSum, item) => iSum + (Number(item.totalPrice) || 0), 0), 0
+  );
+  const elementsMarkup = settings.categoryMarkups.elements || 22.0;
+  // Formula: Price = Cost / (1 - Margin% - Commission%)
+  const elementsDivisor = 1 - (elementsMarkup / 100) - (commission / 100);
+  const elementsSellingPrice = elementsCost / (elementsDivisor > 0 ? elementsDivisor : 0.01);
+
+  // 2. WINDOWS & DOORS
+  const windows = quotation.products.find(s => s.id === 'windows')?.items || [];
+  const doors = quotation.products.find(s => s.id === 'doors')?.items || [];
+  const windowsDoorsCost = [...windows, ...doors].reduce(
+    (sum, item) => sum + (Number(item.totalPrice) || 0), 0
+  );
+  const windowsDoorsMarkup = settings.categoryMarkups.windowsDoors || 18.0;
+  const wdDivisor = 1 - (windowsDoorsMarkup / 100) - (commission / 100);
+  const windowsDoorsSellingPrice = windowsDoorsCost / (wdDivisor > 0 ? wdDivisor : 0.01);
+
+  // 3. WORKSITE DELIVERIES (Irtotavara)
+  const worksiteMaterials = quotation.products.filter(s => s.id !== 'windows' && s.id !== 'doors');
+  const worksiteDeliveriesCost = worksiteMaterials.reduce((sum, section) => 
+    sum + section.items.reduce((iSum, item) => iSum + (Number(item.totalPrice) || 0), 0), 0
+  );
+  const worksiteMarkup = settings.categoryMarkups.worksiteDeliveries || 15.0;
+  const wsDivisor = 1 - (worksiteMarkup / 100) - (commission / 100);
+  const worksiteSellingPrice = worksiteDeliveriesCost / (wsDivisor > 0 ? wsDivisor : 0.01);
+
+  // 4. INSTALLATION (Calculated Estimate)
+  // Calculate material base for installation estimate
+  const materialBase = elementsCost + windowsDoorsCost + worksiteDeliveriesCost;
+  const currentLevel = ASSEMBLY_LEVELS.find(l => l.id === quotation.delivery.assemblyLevelId) || ASSEMBLY_LEVELS[1];
+  const baseMultiplier = Number(currentLevel.pricing.baseMultiplier) || 1.2;
+  // Installation "Cost" is estimated as the difference the multiplier provides, treated as a base cost here for pricing
+  // In reality, this is often "subcontractor cost".
+  const installationCost = (materialBase * baseMultiplier) - materialBase;
+  
+  const installationMarkup = settings.categoryMarkups.installation || 28.0;
+  const instDivisor = 1 - (installationMarkup / 100) - (commission / 100);
+  const installationSellingPrice = installationCost / (instDivisor > 0 ? instDivisor : 0.01);
+
+  // 5. TRANSPORTATION
+  const t = quotation.delivery.transportation;
+  const dist = Number(t?.distanceKm) || 0;
+  const count = Number(t?.truckCount) || 1; 
+  const rate = Number(t?.ratePerKm) || 2.20;
+  const transportationCost = (dist * 2) * rate * count;
+
+  const transportationMarkup = settings.categoryMarkups.transportation || 12.0;
+  const transDivisor = 1 - (transportationMarkup / 100) - (commission / 100);
+  const transportationSellingPrice = transportationCost / (transDivisor > 0 ? transDivisor : 0.01);
+
+  // 6. DESIGN / DOCUMENTS
+  const documentsCost = quotation.documents
+    .filter(d => d.included)
+    .reduce((sum, doc) => sum + (Number(doc.price) || 0), 0);
+  const designMarkup = settings.categoryMarkups.design || 25.0;
+  const designDivisor = 1 - (designMarkup / 100) - (commission / 100);
+  const designSellingPrice = documentsCost / (designDivisor > 0 ? designDivisor : 0.01);
+
+
+  // TOTALS
+  const materialCostTotal = elementsCost + windowsDoorsCost + worksiteDeliveriesCost + installationCost + transportationCost + documentsCost;
+  const sellingPriceExVat = elementsSellingPrice + windowsDoorsSellingPrice + worksiteSellingPrice + installationSellingPrice + transportationSellingPrice + designSellingPrice;
+  
+  const profitAmount = sellingPriceExVat - materialCostTotal;
+  const profitPercent = (profitAmount / (sellingPriceExVat || 1)) * 100;
+
+  // VAT
+  const vatRate = settings.vatMode === 'standard' ? 25.5 : 0;
+  const vatAmount = sellingPriceExVat * (vatRate / 100);
+  const totalWithVat = sellingPriceExVat + vatAmount;
+
+  return {
+    ...settings,
+    elementsCost,
+    productsCost: windowsDoorsCost + worksiteDeliveriesCost,
+    documentsCost,
+    installationCost,
+    transportationCost,
+    
+    materialCostTotal,
+    sellingPriceExVat,
+    profitAmount,
+    profitPercent,
+    
+    vatPercentage: vatRate,
+    vatAmount,
+    totalWithVat,
+
+    breakdown: {
+      elements: { cost: elementsCost, markup: elementsMarkup, sellingPrice: elementsSellingPrice, profit: elementsSellingPrice - elementsCost },
+      windowsDoors: { cost: windowsDoorsCost, markup: windowsDoorsMarkup, sellingPrice: windowsDoorsSellingPrice, profit: windowsDoorsSellingPrice - windowsDoorsCost },
+      worksiteDeliveries: { cost: worksiteDeliveriesCost, markup: worksiteMarkup, sellingPrice: worksiteSellingPrice, profit: worksiteSellingPrice - worksiteDeliveriesCost },
+      installation: { cost: installationCost, markup: installationMarkup, sellingPrice: installationSellingPrice, profit: installationSellingPrice - installationCost },
+      transportation: { cost: transportationCost, markup: transportationMarkup, sellingPrice: transportationSellingPrice, profit: transportationSellingPrice - transportationCost },
+      design: { cost: documentsCost, markup: designMarkup, sellingPrice: designSellingPrice, profit: designSellingPrice - documentsCost }
+    }
+  };
 };
 
 // Helper to create fresh state
@@ -102,7 +220,7 @@ interface QuotationContextType {
   addProduct: (sectionId: string, product: any) => void;
   removeProduct: (sectionId: string, productId: string) => void;
   updateProduct: (sectionId: string, productId: string, updates: any) => void;
-  updatePricingSettings: (settings: Partial<Pick<PricingCalculation, 'markupPercentage' | 'commissionPercentage' | 'vatMode'>>) => void;
+  updatePricingSettings: (settings: any) => void;
   updatePaymentMilestone: (id: string, updates: Partial<PaymentMilestone>) => void;
   setPaymentSchedule: (schedule: PaymentMilestone[]) => void;
   toggleLogistics: (id: string) => void;
@@ -119,8 +237,7 @@ const QuotationContext = createContext<QuotationContextType | undefined>(undefin
 
 export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [quotation, setQuotation] = useState<Quotation>(getInitialState());
-
-  const [pricing, setPricing] = useState<PricingCalculation>(quotation.pricing);
+  const [pricing, setPricing] = useState<PricingCalculation>(DEFAULT_PRICING);
 
   // --- Actions ---
 
@@ -244,7 +361,7 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }));
   };
 
-  const updatePricingSettings = (settings: Partial<Pick<PricingCalculation, 'markupPercentage' | 'commissionPercentage' | 'vatMode'>>) => {
+  const updatePricingSettings = (settings: any) => {
       setQuotation(prev => ({
           ...prev,
           pricing: { ...prev.pricing, ...settings }
@@ -325,64 +442,18 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // --- Pricing Effect ---
   
   useEffect(() => {
-    // 1. Calculate Elements Total
-    const elementsTotal = quotation.elements.reduce((sum, section) => 
-        sum + section.items.reduce((iSum, item) => iSum + (Number(item.totalPrice) || 0), 0), 0
-    );
-
-    // 2. Calculate Products Total
-    const productsTotal = quotation.products.reduce((sum, section) => 
-        sum + section.items.reduce((iSum, item) => iSum + (Number(item.totalPrice) || 0), 0), 0
-    );
-
-    // 3. Calculate Documents Total
-    const documentsTotal = quotation.documents
-        .filter(d => d.included)
-        .reduce((sum, doc) => sum + (Number(doc.price) || 0), 0);
-
-    // 4. Calculate Installation Total
-    const materialCost = elementsTotal + productsTotal;
-    const currentLevel = ASSEMBLY_LEVELS.find(l => l.id === quotation.delivery.assemblyLevelId) || ASSEMBLY_LEVELS[1];
-    
-    const baseMultiplier = Number(currentLevel.pricing.baseMultiplier) || 1.2;
-    const totalWithInstallation = materialCost * baseMultiplier;
-    const installationTotal = totalWithInstallation - materialCost;
-
-    // 5. Calculate Transportation Total
-    // Use fallbacks to ensure valid numbers (prevents NaN)
-    const t = quotation.delivery.transportation;
-    const dist = Number(t?.distanceKm) || 0;
-    const count = Number(t?.truckCount) || 1; 
-    const rate = Number(t?.ratePerKm) || 2.20;
-    
-    // Formula: (Distance * 2 for round trip) * Truck Count * Rate
-    const transportationTotal = (dist * 2) * rate * count;
-
-    // 6. Settings
-    const markupPct = Number(quotation.pricing.markupPercentage) || 0;
-    const commPct = Number(quotation.pricing.commissionPercentage) || 0;
-
-    const newPricing = calculatePricing(
-        elementsTotal,
-        productsTotal,
-        documentsTotal,
-        installationTotal,
-        transportationTotal,
-        markupPct,
-        commPct,
-        quotation.pricing.vatMode
-    );
-
+    const newPricing = calculateDetailedPricing(quotation);
     setPricing(newPricing);
   }, [
       quotation.elements, 
       quotation.products, 
       quotation.documents, 
-      quotation.pricing.markupPercentage,
+      quotation.pricing.categoryMarkups,
       quotation.pricing.commissionPercentage,
       quotation.pricing.vatMode,
       quotation.delivery.assemblyLevelId,
-      quotation.delivery.transportation 
+      quotation.delivery.transportation,
+      quotation.delivery.customItems
   ]);
 
   return (

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
-import { Bug, X, RefreshCw, Database, Activity, AlertTriangle } from 'lucide-react';
+import { Bug, X, RefreshCw, Activity, AlertTriangle } from 'lucide-react';
 
 const DebugPanel: React.FC = () => {
   const { quotation, pricing, resetQuotation } = useQuotation();
@@ -9,7 +9,7 @@ const DebugPanel: React.FC = () => {
 
   // Check for NaNs
   const hasNaN = JSON.stringify(pricing).includes('null') || 
-                 Object.values(pricing).some(v => Number.isNaN(v));
+                 Object.values(pricing).some(v => typeof v === 'number' && Number.isNaN(v));
 
   if (!isOpen) {
     return (
@@ -22,6 +22,15 @@ const DebugPanel: React.FC = () => {
       </button>
     );
   }
+
+  const breakdownRow = (label: string, data: any) => (
+      <div className="grid grid-cols-4 gap-2 text-xs border-b border-slate-800 py-1">
+          <div className="text-slate-400">{label}</div>
+          <div className="text-right">{data.cost.toFixed(0)}</div>
+          <div className="text-right text-blue-400">{data.sellingPrice.toFixed(0)}</div>
+          <div className="text-right text-green-400">{data.profit.toFixed(0)}</div>
+      </div>
+  );
 
   return (
     <div className="fixed bottom-4 right-4 z-[100] w-[90vw] max-w-lg bg-slate-900 text-slate-300 rounded-xl shadow-2xl border border-slate-700 flex flex-col max-h-[80vh] font-mono text-xs overflow-hidden animate-in slide-in-from-bottom-5">
@@ -83,41 +92,37 @@ const DebugPanel: React.FC = () => {
 
           {activeTab === 'pricing' && (
               <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-x-8 gap-y-1">
-                      <div className="text-slate-500">Elements Total</div>
-                      <div className="text-right text-white">{pricing.elementsTotal.toFixed(2)}</div>
-                      
-                      <div className="text-slate-500">Products Total</div>
-                      <div className="text-right text-white">{pricing.productsTotal.toFixed(2)}</div>
-                      
-                      <div className="text-slate-500">Installation Total</div>
-                      <div className="text-right text-white">{pricing.installationTotal.toFixed(2)}</div>
+                  <div>
+                      <div className="grid grid-cols-4 gap-2 text-xs font-bold text-slate-500 uppercase border-b border-slate-700 pb-1 mb-2">
+                          <div>Cat</div>
+                          <div className="text-right">Cost</div>
+                          <div className="text-right">Price</div>
+                          <div className="text-right">Profit</div>
+                      </div>
+                      {breakdownRow('Elements', pricing.breakdown.elements)}
+                      {breakdownRow('Win/Door', pricing.breakdown.windowsDoors)}
+                      {breakdownRow('Worksite', pricing.breakdown.worksiteDeliveries)}
+                      {breakdownRow('Install', pricing.breakdown.installation)}
+                      {breakdownRow('Transport', pricing.breakdown.transportation)}
+                      {breakdownRow('Design', pricing.breakdown.design)}
+                  </div>
 
-                      <div className="text-slate-500">Transport (Dist: {quotation.delivery.transportation.distanceKm}km)</div>
-                      <div className="text-right text-white">{pricing.transportationTotal.toFixed(2)}</div>
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-1 mt-4">
+                      <div className="text-slate-400 font-bold">Total Cost</div>
+                      <div className="text-right font-bold text-white">{pricing.materialCostTotal.toFixed(2)}</div>
 
-                      <div className="col-span-2 border-t border-slate-800 my-1"></div>
-                      
-                      <div className="text-slate-400 font-bold">Cost Price</div>
-                      <div className="text-right font-bold text-blue-400">{pricing.costPrice.toFixed(2)}</div>
+                      <div className="text-slate-400 font-bold">Total Price (0%)</div>
+                      <div className="text-right font-bold text-blue-400">{pricing.sellingPriceExVat.toFixed(2)}</div>
 
-                      <div className="text-slate-500">+ Markup ({pricing.markupPercentage}%)</div>
-                      <div className="text-right text-green-400">{pricing.markupAmount.toFixed(2)}</div>
+                      <div className="text-slate-500">Total Profit</div>
+                      <div className="text-right text-green-400">{pricing.profitAmount.toFixed(2)} ({pricing.profitPercent.toFixed(1)}%)</div>
 
-                      <div className="text-slate-500">+ Commission ({pricing.commissionPercentage}%)</div>
-                      <div className="text-right text-green-400">{pricing.commissionAmount.toFixed(2)}</div>
-
-                      <div className="col-span-2 border-t border-slate-800 my-1"></div>
-
-                      <div className="text-slate-300">Subtotal (ALV 0%)</div>
-                      <div className="text-right text-white">{pricing.subtotal.toFixed(2)}</div>
-
-                      <div className="text-slate-500">+ VAT ({pricing.vatPercentage}%)</div>
+                      <div className="text-slate-500">VAT ({pricing.vatPercentage}%)</div>
                       <div className="text-right text-slate-400">{pricing.vatAmount.toFixed(2)}</div>
 
                        <div className="col-span-2 border-t border-slate-700 my-2"></div>
 
-                      <div className="text-sm font-bold text-white">TOTAL</div>
+                      <div className="text-sm font-bold text-white">GRAND TOTAL</div>
                       <div className="text-sm font-bold text-right text-blue-400">{pricing.totalWithVat.toFixed(2)}</div>
                   </div>
               </div>
@@ -131,7 +136,7 @@ const DebugPanel: React.FC = () => {
       </div>
       
       <div className="p-2 bg-slate-950 border-t border-slate-800 text-[10px] text-slate-600 text-center">
-         App ID: {quotation.id} | Items: {quotation.elements.length + quotation.products.length}
+         App ID: {quotation.id} | Commission: {quotation.pricing.commissionPercentage}%
       </div>
     </div>
   );
