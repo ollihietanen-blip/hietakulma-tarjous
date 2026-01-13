@@ -192,7 +192,8 @@ const getInitialState = (): Quotation => ({
       email: 'matti.meikalainen@esimerkki.fi',
       phone: '040 123 4567',
       address: 'Esimerkkikatu 1, 00100 Helsinki',
-      billingMethod: 'email'
+      billingMethod: 'email',
+      tags: [] // Initial empty tags
     },
     // Init Contract with some defaults
     contract: {
@@ -267,6 +268,7 @@ interface QuotationContextType {
   addCustomInstallationItem: (itemText: string) => void;
   removeCustomInstallationItem: (index: number) => void;
   updateTransportation: (details: Partial<TransportationDetails>) => void;
+  updateContract: (contract: Partial<Quotation['contract']>) => void;
   resetQuotation: () => void; 
   pricing: PricingCalculation;
   // Cost Tracking Actions
@@ -516,6 +518,13 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }));
   };
 
+  const updateContract = (contractUpdates: Partial<Quotation['contract']>) => {
+      setQuotation(prev => ({
+          ...prev,
+          contract: { ...prev.contract, ...contractUpdates }
+      }));
+  };
+
   // --- Cost Tracking ---
 
   const addCostEntry = (entry: Omit<CostEntry, 'id'>) => {
@@ -686,6 +695,7 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       addCustomInstallationItem,
       removeCustomInstallationItem,
       updateTransportation,
+      updateContract,
       resetQuotation,
       pricing,
       addCostEntry,

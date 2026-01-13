@@ -10,6 +10,7 @@ import PipelineView from './components/Views/PipelineView';
 import ProjectsListView from './components/Views/ProjectsListView';
 import CostTrackingView from './components/Views/CostTrackingView';
 import TrussCalculatorView from './components/Views/TrussCalculatorView';
+import CalendarView from './components/Views/CalendarView';
 import { Menu } from 'lucide-react';
 
 // Added 'messages'
@@ -84,6 +85,11 @@ function App() {
            {currentView === 'projects' && (
                <div className="flex-1 bg-hieta-light">
                    <ProjectsListView onOpenProject={() => setCurrentView('project_dashboard')} />
+               </div>
+           )}
+           {currentView === 'calendar' && (
+               <div className="flex-1 bg-hieta-light">
+                   <CalendarView />
                </div>
            )}
            {/* Active Project Workspaces */}

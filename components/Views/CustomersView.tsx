@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
-import { Users, Search, Plus, MapPin, Phone, Mail, User, Building2, ArrowRight, FolderOpen, History } from 'lucide-react';
+import { Users, Search, Plus, MapPin, Phone, Mail, User, Building2, ArrowRight, FolderOpen, History, Tag, X } from 'lucide-react';
 
 interface CustomersViewProps {
   onSelectProject: () => void;
@@ -9,15 +9,16 @@ interface CustomersViewProps {
 const CustomersView: React.FC<CustomersViewProps> = ({ onSelectProject }) => {
   const { quotation, updateCustomer } = useQuotation();
   
-  // Mock Customer Database
+  // Mock Customer Database with Tags
   const [customers] = useState([
-    { id: 1, name: 'Matti Meikäläinen', company: '', email: 'matti.m@example.com', phone: '040 123 4567', address: 'Esimerkkitie 12, Helsinki', type: 'consumer', projectCount: 2 },
-    { id: 2, name: 'Rakennus Oy Esimerkki', company: 'Rakennus Oy', email: 'toimisto@rakennus.fi', phone: '050 987 6543', address: 'Teollisuuskatu 5, Tampere', type: 'business', projectCount: 5 },
-    { id: 3, name: 'Teppo Testaaja', company: '', email: 'teppo@testi.fi', phone: '044 555 6666', address: 'Mökkitie 8, Levi', type: 'consumer', projectCount: 1 },
+    { id: 1, name: 'Matti Meikäläinen', company: '', email: 'matti.m@example.com', phone: '040 123 4567', address: 'Esimerkkitie 12, Helsinki', type: 'consumer', projectCount: 2, tags: ['Uutiskirje', 'Messuliidi'] },
+    { id: 2, name: 'Rakennus Oy Esimerkki', company: 'Rakennus Oy', email: 'toimisto@rakennus.fi', phone: '050 987 6543', address: 'Teollisuuskatu 5, Tampere', type: 'business', projectCount: 5, tags: ['VIP', 'B2B', 'Laskutus'] },
+    { id: 3, name: 'Teppo Testaaja', company: '', email: 'teppo@testi.fi', phone: '044 555 6666', address: 'Mökkitie 8, Levi', type: 'consumer', projectCount: 1, tags: [] },
   ]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [tagInput, setTagInput] = useState('');
 
   const filteredCustomers = customers.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -33,13 +34,37 @@ const CustomersView: React.FC<CustomersViewProps> = ({ onSelectProject }) => {
           email: c.email,
           phone: c.phone,
           address: c.address,
-          billingMethod: c.type === 'business' ? 'e-invoice' : 'email'
+          billingMethod: c.type === 'business' ? 'e-invoice' : 'email',
+          tags: c.tags || []
       });
   };
 
   const handleStartProject = () => {
      // Trigger navigation to project settings to start/edit active project
      onSelectProject();
+  };
+
+  const handleAddTag = () => {
+      const currentTags = quotation.customer.tags || [];
+      if (tagInput.trim() && !currentTags.includes(tagInput.trim())) {
+          updateCustomer({
+              tags: [...currentTags, tagInput.trim()]
+          });
+          setTagInput('');
+      }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+      const currentTags = quotation.customer.tags || [];
+      updateCustomer({
+          tags: currentTags.filter(t => t !== tagToRemove)
+      });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+          handleAddTag();
+      }
   };
 
   return (
@@ -76,7 +101,20 @@ const CustomersView: React.FC<CustomersViewProps> = ({ onSelectProject }) => {
                               {c.type === 'business' ? 'Yritys' : 'Kuluttaja'}
                           </span>
                       </div>
-                      <div className="flex justify-between items-center mt-2">
+                      
+                      {/* Tags Preview */}
+                      {c.tags && c.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                              {c.tags.slice(0, 3).map(tag => (
+                                  <span key={tag} className="text-[10px] bg-blue-50 text-blue-600 px-1.5 rounded-sm">
+                                      {tag}
+                                  </span>
+                              ))}
+                              {c.tags.length > 3 && <span className="text-[10px] text-slate-400">+{c.tags.length - 3}</span>}
+                          </div>
+                      )}
+
+                      <div className="flex justify-between items-center mt-1">
                         <div className="text-sm text-slate-500 flex items-center gap-2">
                             <MapPin size={12} /> {c.address}
                         </div>
@@ -133,6 +171,42 @@ const CustomersView: React.FC<CustomersViewProps> = ({ onSelectProject }) => {
                                   <span className="font-medium">{quotation.customer.address}</span>
                               </div>
                           </div>
+                      </div>
+                  </div>
+
+                  {/* Marketing & Tags Card */}
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+                      <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                          <Tag className="text-purple-500" size={20} /> Markkinointi & Luokittelu
+                      </h3>
+                      <p className="text-sm text-slate-500 mb-4">
+                          Lisää tunnisteita asiakkaan luokittelua varten (esim. Mailchimp-vienti).
+                      </p>
+                      
+                      <div className="flex flex-wrap gap-2 mb-4">
+                          {(quotation.customer.tags || []).map(tag => (
+                              <span key={tag} className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 px-3 py-1 rounded-full text-sm font-medium border border-purple-100">
+                                  {tag}
+                                  <button onClick={() => handleRemoveTag(tag)} className="hover:text-purple-900"><X size={14} /></button>
+                              </span>
+                          ))}
+                      </div>
+
+                      <div className="flex gap-2 max-w-md">
+                          <input 
+                              type="text" 
+                              value={tagInput}
+                              onChange={(e) => setTagInput(e.target.value)}
+                              onKeyDown={handleKeyDown}
+                              placeholder="Lisää uusi tunniste..."
+                              className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                          />
+                          <button 
+                              onClick={handleAddTag}
+                              className="px-4 py-2 bg-slate-100 text-slate-700 font-bold text-sm rounded-lg hover:bg-slate-200 transition-colors"
+                          >
+                              Lisää
+                          </button>
                       </div>
                   </div>
 

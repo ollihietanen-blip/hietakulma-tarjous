@@ -1,16 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
-import { FolderCog, ArrowRight, Save, Phone, Mail, MessageCircle, FileText, Send, Lock, User } from 'lucide-react';
+import { FolderCog, ArrowRight, Save, Phone, Mail, MessageCircle, FileText, Send, Lock, User, FileSignature, MapPin, Hash, Calendar } from 'lucide-react';
 
 interface ProjectDashboardViewProps {
   onNext: () => void;
 }
 
 const ProjectDashboardView: React.FC<ProjectDashboardViewProps> = ({ onNext }) => {
-  const { quotation, updateProject, addMessage } = useQuotation();
-  const { project, customer, messages } = quotation;
+  const { quotation, updateProject, addMessage, updateContract } = useQuotation();
+  const { project, customer, messages, contract } = quotation;
   
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingContract, setIsEditingContract] = useState(false);
   const [newMessage, setNewMessage] = useState('');
   const [messageType, setMessageType] = useState<'customer' | 'internal'>('customer');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -46,6 +47,8 @@ const ProjectDashboardView: React.FC<ProjectDashboardViewProps> = ({ onNext }) =
   const inputClasses = "w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-lg shadow-sm font-medium hover:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:outline-none transition-all duration-200 placeholder:text-slate-400";
   const labelClasses = "block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 ml-1";
   const cardClasses = "bg-white rounded-xl shadow-sm border border-slate-200 p-6";
+
+  const isContractSigned = quotation.status === 'accepted';
 
   return (
     <div className="p-8 max-w-7xl mx-auto animate-in fade-in duration-300">
@@ -128,6 +131,88 @@ const ProjectDashboardView: React.FC<ProjectDashboardViewProps> = ({ onNext }) =
                             </div>
                         </div>
                      )}
+                </div>
+
+                {/* Contract Card */}
+                <div className={cardClasses}>
+                    <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                        <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <FileSignature size={18} className="text-blue-600"/> Toimitussopimus
+                        </h2>
+                        {!isContractSigned && (
+                            <button onClick={() => setIsEditingContract(!isEditingContract)} className="text-xs font-bold text-blue-600 hover:underline">
+                                {isEditingContract ? 'Sulje' : 'Muokkaa'}
+                            </button>
+                        )}
+                    </div>
+
+                    {!isEditingContract ? (
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs font-bold text-slate-400 uppercase">Tila</span>
+                                {isContractSigned ? (
+                                    <span className="text-xs font-bold bg-green-100 text-green-700 px-2 py-1 rounded">Allekirjoitettu</span>
+                                ) : (
+                                    <span className="text-xs font-bold bg-slate-100 text-slate-500 px-2 py-1 rounded">Luonnos</span>
+                                )}
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
+                                    <Hash size={16} />
+                                </div>
+                                <div>
+                                    <div className="text-xs text-slate-400">Sopimusnumero</div>
+                                    <div className="text-sm font-bold text-slate-900">{contract?.contractNumber || '-'}</div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
+                                    <MapPin size={16} />
+                                </div>
+                                <div>
+                                    <div className="text-xs text-slate-400">Allekirjoituspaikka</div>
+                                    <div className="text-sm font-bold text-slate-900">{contract?.signingPlace || '-'}</div>
+                                </div>
+                            </div>
+
+                            {isContractSigned && (
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-green-50 rounded-lg text-green-600">
+                                        <Calendar size={16} />
+                                    </div>
+                                    <div>
+                                        <div className="text-xs text-slate-400">Päiväys</div>
+                                        <div className="text-sm font-bold text-slate-900">
+                                            {contract?.signDate ? new Date(contract.signDate).toLocaleDateString() : '-'}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="space-y-4 animate-in fade-in">
+                            <div>
+                                <label className={labelClasses}>Sopimusnumero</label>
+                                <input 
+                                    type="text" 
+                                    value={contract?.contractNumber || ''} 
+                                    onChange={(e) => updateContract({ contractNumber: e.target.value })} 
+                                    className={inputClasses} 
+                                />
+                            </div>
+                            <div>
+                                <label className={labelClasses}>Allekirjoituspaikka</label>
+                                <input 
+                                    type="text" 
+                                    value={contract?.signingPlace || ''} 
+                                    onChange={(e) => updateContract({ signingPlace: e.target.value })} 
+                                    className={inputClasses} 
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

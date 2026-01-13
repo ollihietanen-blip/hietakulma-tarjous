@@ -114,6 +114,7 @@ export interface Customer {
   address: string;
   billingMethod: 'email' | 'e-invoice' | 'mail';
   billingAddress?: string;
+  tags: string[];
 }
 
 export interface DocumentItem {

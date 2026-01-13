@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
-import { LayoutDashboard, Calculator, FileText, Users, LogOut, ChevronRight, KanbanSquare, X, PieChart, RefreshCw, FolderCog, Triangle, Box, ChevronDown, ListTree } from 'lucide-react';
+import { LayoutDashboard, Calculator, FileText, Users, LogOut, ChevronRight, KanbanSquare, X, PieChart, RefreshCw, FolderCog, Triangle, Box, ChevronDown, ListTree, Calendar } from 'lucide-react';
 import { UserRole } from '../../App';
 
 interface SidebarProps {
@@ -22,6 +22,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
   const mainItems = [
     { id: 'dashboard', label: 'Etusivu', icon: <LayoutDashboard size={20} /> },
     { id: 'pipeline', label: 'Myyntiputki', icon: <KanbanSquare size={20} /> },
+    { id: 'calendar', label: 'Kalenteri', icon: <Calendar size={20} /> },
   ];
 
   const registryItems = [

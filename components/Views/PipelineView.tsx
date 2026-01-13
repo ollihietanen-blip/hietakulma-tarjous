@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
     KanbanSquare, MoreHorizontal, Plus, ArrowRight, 
-    Calendar, User, AlertCircle, CheckCircle2, TrendingUp, DollarSign
+    Calendar, User, AlertCircle, CheckCircle2, TrendingUp, Euro
 } from 'lucide-react';
 
 interface Deal {
@@ -59,7 +59,7 @@ const PipelineView: React.FC = () => {
                     </h1>
                     <div className="flex gap-6 mt-2 text-sm text-slate-500">
                         <div className="flex items-center gap-1.5">
-                            <DollarSign size={14} />
+                            <Euro size={14} />
                             Auki: <span className="font-bold text-slate-900">{totalPipelineValue.toLocaleString('fi-FI')} €</span>
                         </div>
                         <div className="flex items-center gap-1.5">

@@ -3,7 +3,7 @@ import { useQuotation } from '../../context/QuotationContext';
 import { 
     Trash2, Plus, Box, Maximize2, Palette, 
     Scan, ChevronDown, ChevronRight, LayoutGrid, 
-    Package, Layers, DollarSign 
+    Package, Layers, Euro 
 } from 'lucide-react';
 
 const ProductsTab: React.FC = () => {
