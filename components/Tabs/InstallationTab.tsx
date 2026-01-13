@@ -81,7 +81,7 @@ const InstallationTab: React.FC = () => {
   };
 
   // Calculate Base Price for Material (Elements + Products)
-  const materialCost = pricing.elementsTotal + pricing.productsTotal;
+  const materialCost = (pricing.elementsTotal || 0) + (pricing.productsTotal || 0);
   const currentLevel = ASSEMBLY_LEVELS.find(l => l.id === quotation.delivery.assemblyLevelId) || ASSEMBLY_LEVELS[1];
   
   const handleAddCustomItem = () => {
@@ -111,7 +111,7 @@ const InstallationTab: React.FC = () => {
       <div>
         <h1 className="text-2xl font-bold text-slate-900 mb-2">Asennuspalvelut</h1>
         <p className="text-slate-500">
-            Valitse asennuksen laajuus. Hinta lasketaan automaattisesti materiaalipaketin ({materialCost.toLocaleString('fi-FI', {maximumFractionDigits:0})} €) päälle.
+            Valitse asennuksen laajuus. Hinta lasketaan automaattisesti materiaalipaketin ({(materialCost || 0).toLocaleString('fi-FI', {maximumFractionDigits:0})} €) päälle.
             Voit muokata valittua laajuutta poistamalla työvaiheita tai lisäämällä omia rivejä.
         </p>
       </div>

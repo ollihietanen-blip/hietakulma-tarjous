@@ -22,7 +22,7 @@ const PricingTab: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm">
           <div className="text-xs text-gray-500 mb-1 font-semibold uppercase tracking-wide">Tehdastuotanto</div>
           <div className="text-xl font-bold text-gray-900">
-            {pricing.elementsTotal.toLocaleString('fi-FI', {
+            {(pricing.elementsTotal || 0).toLocaleString('fi-FI', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })} €
@@ -35,7 +35,7 @@ const PricingTab: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm">
           <div className="text-xs text-gray-500 mb-1 font-semibold uppercase tracking-wide">Työmaatoimitukset</div>
           <div className="text-xl font-bold text-gray-900">
-            {pricing.productsTotal.toLocaleString('fi-FI', {
+            {(pricing.productsTotal || 0).toLocaleString('fi-FI', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })} €
@@ -48,7 +48,7 @@ const PricingTab: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm">
           <div className="text-xs text-gray-500 mb-1 font-semibold uppercase tracking-wide">Suunnittelu</div>
           <div className="text-xl font-bold text-gray-900">
-            {pricing.documentsTotal.toLocaleString('fi-FI', {
+            {(pricing.documentsTotal || 0).toLocaleString('fi-FI', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })} €
@@ -61,7 +61,7 @@ const PricingTab: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm ring-1 ring-blue-100">
           <div className="text-xs text-blue-600 mb-1 font-semibold uppercase tracking-wide">Asennus</div>
           <div className="text-xl font-bold text-blue-900">
-            {pricing.installationTotal.toLocaleString('fi-FI', {
+            {(pricing.installationTotal || 0).toLocaleString('fi-FI', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })} €
@@ -75,7 +75,7 @@ const PricingTab: React.FC = () => {
         <div className="bg-slate-800 rounded-lg border border-slate-700 p-5 shadow-sm text-white">
           <div className="text-xs text-slate-400 mb-1 font-semibold uppercase tracking-wide">Omakustannehinta</div>
           <div className="text-xl font-bold text-white">
-            {pricing.costPrice.toLocaleString('fi-FI', {
+            {(pricing.costPrice || 0).toLocaleString('fi-FI', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })} €
@@ -93,7 +93,7 @@ const PricingTab: React.FC = () => {
           <div className="flex items-center justify-between py-3 border-b border-gray-100">
             <span className="text-gray-700 font-medium">Omakustannehinta (alv 0%)</span>
             <span className="text-lg font-semibold text-gray-900">
-              {pricing.costPrice.toLocaleString('fi-FI', {
+              {(pricing.costPrice || 0).toLocaleString('fi-FI', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
               })} €
@@ -121,7 +121,7 @@ const PricingTab: React.FC = () => {
                 {markupError && <span className="text-xs text-red-500">Pitää olla &ge; 0</span>}
             </div>
             <span className="text-lg font-semibold text-green-600">
-              + {pricing.markupAmount.toLocaleString('fi-FI', {
+              + {(pricing.markupAmount || 0).toLocaleString('fi-FI', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
               })} €
@@ -149,7 +149,7 @@ const PricingTab: React.FC = () => {
                 {commissionError && <span className="text-xs text-red-500">Pitää olla &ge; 0</span>}
             </div>
             <span className="text-lg font-semibold text-green-600">
-              + {pricing.commissionAmount.toLocaleString('fi-FI', {
+              + {(pricing.commissionAmount || 0).toLocaleString('fi-FI', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
               })} €
@@ -160,7 +160,7 @@ const PricingTab: React.FC = () => {
           <div className="flex items-center justify-between py-3 border-t-2 border-gray-200 mt-2">
             <span className="text-gray-900 font-bold text-lg">Välisumma (alv 0%)</span>
             <span className="text-xl font-bold text-gray-900">
-              {pricing.subtotal.toLocaleString('fi-FI', {
+              {(pricing.subtotal || 0).toLocaleString('fi-FI', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
               })} €

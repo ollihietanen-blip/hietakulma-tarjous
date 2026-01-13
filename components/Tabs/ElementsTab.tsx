@@ -300,7 +300,7 @@ const ElementsTab: React.FC = () => {
                                     <div className="text-[10px] text-slate-400 font-medium">omakustanne (alv 0%)</div>
                                  </div>
                                  <div className="text-3xl font-bold text-slate-900 leading-none tracking-tight">
-                                   {item.totalPrice.toLocaleString('fi-FI', { minimumFractionDigits: 2 })} <span className="text-lg font-medium text-slate-500">€</span>
+                                   {(item.totalPrice || 0).toLocaleString('fi-FI', { minimumFractionDigits: 2 })} <span className="text-lg font-medium text-slate-500">€</span>
                                  </div>
                              </div>
                            </div>

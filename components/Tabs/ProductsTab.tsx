@@ -77,11 +77,11 @@ const ProductsTab: React.FC = () => {
   const tableHeaderClass = "px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-slate-200";
 
   // Calculate totals for dashboard
-  const windowsTotal = quotation.products.find(s => s.id === 'windows')?.items.reduce((sum, i) => sum + i.totalPrice, 0) || 0;
-  const doorsTotal = quotation.products.find(s => s.id === 'doors')?.items.reduce((sum, i) => sum + i.totalPrice, 0) || 0;
+  const windowsTotal = quotation.products.find(s => s.id === 'windows')?.items.reduce((sum, i) => sum + (i.totalPrice || 0), 0) || 0;
+  const doorsTotal = quotation.products.find(s => s.id === 'doors')?.items.reduce((sum, i) => sum + (i.totalPrice || 0), 0) || 0;
   const materialsTotal = quotation.products
     .filter(s => s.id !== 'windows' && s.id !== 'doors')
-    .reduce((sum, s) => sum + s.items.reduce((is, i) => is + i.totalPrice, 0), 0);
+    .reduce((sum, s) => sum + s.items.reduce((is, i) => is + (i.totalPrice || 0), 0), 0);
 
   return (
     <div className="space-y-8 pb-20">
@@ -117,7 +117,7 @@ const ProductsTab: React.FC = () => {
           const isWindows = section.id === 'windows';
           const isDoors = section.id === 'doors';
           const isSpecial = isWindows || isDoors;
-          const sectionTotal = section.items.reduce((sum, item) => sum + item.totalPrice, 0);
+          const sectionTotal = section.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
           const isOpen = expandedSections[section.id];
           
           // Icon Selection
@@ -285,7 +285,7 @@ const ProductsTab: React.FC = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3 align-top text-right font-bold text-slate-900 pt-3">
-                                                    {item.totalPrice.toLocaleString('fi-FI')} €
+                                                    {(item.totalPrice || 0).toLocaleString('fi-FI')} €
                                                 </td>
                                                 <td className="px-4 py-3 align-middle text-right">
                                                     <button 
@@ -371,7 +371,7 @@ const ProductsTab: React.FC = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-2 text-right font-bold text-slate-900">
-                                                    {item.totalPrice.toLocaleString('fi-FI')} €
+                                                    {(item.totalPrice || 0).toLocaleString('fi-FI')} €
                                                 </td>
                                                 <td className="px-4 py-2 text-right">
                                                     <button 

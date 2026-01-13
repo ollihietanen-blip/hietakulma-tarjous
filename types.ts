@@ -67,7 +67,7 @@ export interface ElementItem {
     finish?: string;
     color?: string;
     cladding?: string;
-    claddingOverhang?: string; // New: Verhouksen ylitys
+    claddingOverhang?: string; 
     surfaceFinish?: string;
     [key: string]: string | undefined;
   };
@@ -145,7 +145,8 @@ export interface PricingCalculation {
   elementsTotal: number;
   productsTotal: number;
   documentsTotal: number;
-  installationTotal: number; // New: Asennuksen hinta
+  installationTotal: number;
+  transportationTotal: number; // Kuljetuskustannukset
 }
 
 export interface PaymentMilestone {
@@ -157,8 +158,14 @@ export interface PaymentMilestone {
   amount: number;
 }
 
+export interface TransportationDetails {
+  distanceKm: number;
+  truckCount: number;
+  ratePerKm: number; // €/km
+}
+
 export interface DeliveryScope {
-  // New: Assembly Level Selection
+  // Assembly Level Selection
   assemblyLevelId: 'material-only' | 'shell-and-roof' | 'exterior-complete';
   // Tracks items removed from the standard package (checked = included, unchecked in UI = in this list)
   unselectedItems: string[]; 
@@ -167,6 +174,7 @@ export interface DeliveryScope {
   // Old granular items (kept for backward compatibility or extra generic logistics)
   logistics: LogisticsItem[];
   exclusions: string[];
+  transportation: TransportationDetails; 
 }
 
 export interface LogisticsItem {
@@ -184,7 +192,7 @@ export interface AssemblyLevel {
   name: string;
   shortName: string;
   description: string;
-  icon: 'package' | 'frame' | 'home'; // Changed to string literals for Lucide icons
+  icon: 'package' | 'frame' | 'home'; 
   
   included: {
     [category: string]: string[];
@@ -479,12 +487,13 @@ export function calculatePricing(
   elementsTotal: number,
   productsTotal: number,
   documentsTotal: number,
-  installationTotal: number, // Added installation total
+  installationTotal: number,
+  transportationTotal: number, 
   markupPercentage: number = 25,
   commissionPercentage: number = 0,
   vatMode: VatMode = 'standard'
 ): PricingCalculation {
-  const costPrice = elementsTotal + productsTotal + documentsTotal + installationTotal;
+  const costPrice = elementsTotal + productsTotal + documentsTotal + installationTotal + transportationTotal;
   const markupAmount = costPrice * (markupPercentage / 100);
   const commissionAmount = costPrice * (commissionPercentage / 100);
   const subtotal = costPrice + markupAmount + commissionAmount;
@@ -509,7 +518,8 @@ export function calculatePricing(
     elementsTotal,
     productsTotal,
     documentsTotal,
-    installationTotal
+    installationTotal,
+    transportationTotal
   };
 }
 

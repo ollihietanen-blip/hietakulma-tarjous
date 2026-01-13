@@ -6,7 +6,7 @@ import { Printer, FileCheck, Phone, Mail, MapPin } from 'lucide-react';
 const SummaryTab: React.FC = () => {
   const { quotation, pricing } = useQuotation();
   
-  const paidDocuments = quotation.documents.filter(d => d.included); // Show all included, even if price is 0
+  const paidDocuments = quotation.documents.filter(d => d.included); 
   const currentLevel = ASSEMBLY_LEVELS.find(l => l.id === quotation.delivery.assemblyLevelId) || ASSEMBLY_LEVELS[1];
   
   // Group elements by section
@@ -16,6 +16,7 @@ const SummaryTab: React.FC = () => {
   const windows = quotation.products.find(s => s.id === 'windows')?.items || [];
   const doors = quotation.products.find(s => s.id === 'doors')?.items || [];
   const materials = quotation.products.filter(s => s.id !== 'windows' && s.id !== 'doors' && s.items.length > 0);
+  const hasProducts = windows.length > 0 || doors.length > 0 || materials.length > 0;
 
   const includedLogistics = quotation.delivery.logistics.filter(l => l.included);
 
@@ -116,10 +117,10 @@ const SummaryTab: React.FC = () => {
          <div className="space-y-10 mb-12">
             
             {/* A. Factory Production */}
-            {elementGroups.length > 0 && (
-                <div>
-                    <h3 className="text-base font-bold text-white bg-slate-800 px-4 py-1.5 rounded-t-lg inline-block">1. Tehdastuotanto</h3>
-                    <div className="border border-slate-200 rounded-b-lg rounded-tr-lg overflow-hidden">
+            <div>
+                <h3 className="text-base font-bold text-white bg-slate-800 px-4 py-1.5 rounded-t-lg inline-block">1. Tehdastuotanto</h3>
+                <div className="border border-slate-200 rounded-b-lg rounded-tr-lg overflow-hidden">
+                    {elementGroups.length > 0 ? (
                         <table className="w-full text-sm">
                             <thead className="bg-slate-50 text-slate-500 font-medium text-xs uppercase text-left">
                                 <tr>
@@ -154,15 +155,19 @@ const SummaryTab: React.FC = () => {
                                 ))}
                             </tbody>
                         </table>
-                    </div>
+                    ) : (
+                        <div className="p-6 text-center text-slate-500 italic bg-slate-50/50">
+                            Ei tehtaalla valmistettavia elementtejä tässä tarjouksessa.
+                        </div>
+                    )}
                 </div>
-            )}
+            </div>
 
             {/* B. Site Deliveries */}
-            {(windows.length > 0 || doors.length > 0 || materials.length > 0) && (
-                <div>
-                    <h3 className="text-base font-bold text-white bg-slate-800 px-4 py-1.5 rounded-t-lg inline-block">2. Työmaatoimitukset</h3>
-                    <div className="border border-slate-200 rounded-b-lg rounded-tr-lg overflow-hidden">
+            <div>
+                <h3 className="text-base font-bold text-white bg-slate-800 px-4 py-1.5 rounded-t-lg inline-block">2. Työmaatoimitukset</h3>
+                <div className="border border-slate-200 rounded-b-lg rounded-tr-lg overflow-hidden">
+                    {hasProducts ? (
                         <table className="w-full text-sm">
                             <thead className="bg-slate-50 text-slate-500 font-medium text-xs uppercase text-left">
                                 <tr>
@@ -225,16 +230,21 @@ const SummaryTab: React.FC = () => {
                                 ))}
                             </tbody>
                         </table>
-                    </div>
+                    ) : (
+                         <div className="p-6 text-center text-slate-500 italic bg-slate-50/50">
+                            Ei erillisiä työmaatoimituksia.
+                        </div>
+                    )}
                 </div>
-            )}
+            </div>
 
             {/* C. Services, Installation & Logistics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 break-inside-avoid">
-                 {/* Left: Installation Scope */}
-                 <div>
-                    <h3 className="text-base font-bold text-white bg-slate-800 px-4 py-1.5 rounded-t-lg inline-block">3. Asennus & Palvelut</h3>
-                    <div className="border border-slate-200 rounded-b-lg rounded-tr-lg p-5 bg-slate-50/50 h-full">
+            <div className="break-inside-avoid">
+                 <h3 className="text-base font-bold text-white bg-slate-800 px-4 py-1.5 rounded-t-lg inline-block">3. Asennus & Logistiikka</h3>
+                 <div className="border border-slate-200 rounded-b-lg rounded-tr-lg p-0 bg-white grid grid-cols-1 md:grid-cols-2">
+                     
+                     {/* Left: Scope */}
+                     <div className="p-5 border-b md:border-b-0 md:border-r border-slate-200">
                         <div className="mb-4">
                             <div className="font-bold text-lg text-slate-900 mb-1 flex items-center gap-2">
                                 {currentLevel.name}
@@ -243,9 +253,8 @@ const SummaryTab: React.FC = () => {
                         </div>
                         
                         <div className="space-y-3">
-                             {/* Standard Inclusions (Summary) */}
                              <div>
-                                <div className="text-xs font-bold text-slate-500 uppercase mb-1">Sisältää mm:</div>
+                                <div className="text-xs font-bold text-slate-500 uppercase mb-1">Sisältö:</div>
                                 <ul className="text-sm text-slate-700 list-disc list-inside space-y-0.5">
                                     {Object.values(currentLevel.included).flat().slice(0, 5).map((inc, i) => (
                                         <li key={i} className="truncate">{inc}</li>
@@ -253,8 +262,8 @@ const SummaryTab: React.FC = () => {
                                     <li>...sekä muut laajuuden mukaiset työt.</li>
                                 </ul>
                              </div>
-
-                             {/* Custom Additions */}
+                             
+                             {/* Custom */}
                              {quotation.delivery.customItems.length > 0 && (
                                  <div className="pt-2 border-t border-slate-200">
                                      <div className="text-xs font-bold text-blue-600 uppercase mb-1">Lisäpalvelut:</div>
@@ -265,55 +274,54 @@ const SummaryTab: React.FC = () => {
                                      </ul>
                                  </div>
                              )}
-
-                             {/* Exclusions / Unselected */}
-                             {quotation.delivery.unselectedItems.length > 0 && (
-                                 <div className="pt-2 border-t border-slate-200">
-                                     <div className="text-xs font-bold text-red-500 uppercase mb-1">Poistettu toimituksesta:</div>
-                                     <ul className="text-sm text-red-700 list-disc list-inside">
-                                         {quotation.delivery.unselectedItems.map((item, i) => (
-                                             <li key={i}>{item}</li>
-                                         ))}
-                                     </ul>
-                                 </div>
-                             )}
                         </div>
-                    </div>
-                 </div>
+                     </div>
 
-                 {/* Right: Logistics & Documents */}
-                 <div className="flex flex-col gap-6">
-                     
-                     {/* Logistics */}
-                     <div>
-                        <h4 className="text-sm font-bold text-slate-700 uppercase mb-2 border-b border-slate-200 pb-1">Logistiikka</h4>
+                     {/* Right: Logistics */}
+                     <div className="p-5">
+                        <h4 className="text-sm font-bold text-slate-700 uppercase mb-3 border-b border-slate-200 pb-1">Logistiikka</h4>
                         <ul className="text-sm space-y-2">
-                            {includedLogistics.map(l => (
+                            {includedLogistics.length > 0 ? includedLogistics.map(l => (
                                 <li key={l.id} className="flex justify-between">
                                     <span className="text-slate-700">{l.description}</span>
                                     <span className="font-bold text-slate-900">Sisältyy</span>
                                 </li>
-                            ))}
+                            )) : <li className="text-slate-400 italic">Ei valittuja logistiikkapalveluita</li>}
                         </ul>
-                     </div>
-
-                     {/* Documents */}
-                     <div>
-                        <h4 className="text-sm font-bold text-slate-700 uppercase mb-2 border-b border-slate-200 pb-1">Suunnitelmat</h4>
-                        <ul className="text-sm space-y-1">
-                            {paidDocuments.map(d => (
-                                <li key={d.id} className="flex justify-between">
-                                    <span className="text-slate-700">{d.name}</span>
-                                    <span className="font-bold text-slate-900">
-                                        {d.price > 0 ? `${d.price} €` : 'Sisältyy'}
-                                    </span>
-                                </li>
-                            ))}
-                            {paidDocuments.length === 0 && <li className="text-slate-400 italic">Ei valittuja dokumentteja</li>}
-                        </ul>
+                        
+                        {quotation.delivery.transportation.distanceKm > 0 && (
+                             <div className="mt-4 pt-3 border-t border-slate-100">
+                                 <div className="flex justify-between text-sm">
+                                     <span className="text-slate-700">Kuljetus ({quotation.delivery.transportation.distanceKm} km)</span>
+                                     <span className="font-bold text-slate-900">
+                                         {pricing.transportationTotal > 0 ? `${(pricing.transportationTotal).toLocaleString('fi-FI')} €` : 'Sisältyy'}
+                                     </span>
+                                 </div>
+                             </div>
+                        )}
                      </div>
                  </div>
             </div>
+
+            {/* D. Documents */}
+            <div className="break-inside-avoid">
+                <h3 className="text-base font-bold text-white bg-slate-800 px-4 py-1.5 rounded-t-lg inline-block">4. Suunnitelmat & Dokumentit</h3>
+                <div className="border border-slate-200 rounded-b-lg rounded-tr-lg p-5 bg-white">
+                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                        {paidDocuments.length > 0 ? paidDocuments.map(d => (
+                            <li key={d.id} className="flex justify-between items-center py-1 border-b border-slate-50 last:border-0">
+                                <span className="text-slate-700">{d.name}</span>
+                                <span className="font-bold text-slate-900 bg-slate-50 px-2 py-0.5 rounded text-xs">
+                                    {d.price > 0 ? `${d.price} €` : 'Sisältyy'}
+                                </span>
+                            </li>
+                        )) : (
+                            <li className="text-slate-400 italic py-2">Ei valittuja dokumentteja.</li>
+                        )}
+                    </ul>
+                </div>
+            </div>
+
          </div>
 
          {/* 4. PRICING SUMMARY */}
@@ -330,8 +338,8 @@ const SummaryTab: React.FC = () => {
                              </div>
                          ) : (
                              <div className="space-y-1">
-                                 <p>Hinnat sisältävät arvonlisäveron {pricing.vatPercentage.toLocaleString('fi-FI')} %.</p>
-                                 <p>Veron osuus yhteensä: <span className="font-medium text-slate-900">{pricing.vatAmount.toLocaleString('fi-FI', {minimumFractionDigits: 2})} €</span></p>
+                                 <p>Hinnat sisältävät arvonlisäveron {(pricing.vatPercentage || 0).toLocaleString('fi-FI')} %.</p>
+                                 <p>Veron osuus yhteensä: <span className="font-medium text-slate-900">{(pricing.vatAmount || 0).toLocaleString('fi-FI', {minimumFractionDigits: 2})} €</span></p>
                              </div>
                          )}
                      </div>
@@ -340,7 +348,7 @@ const SummaryTab: React.FC = () => {
                      <div className="text-right">
                          <div className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Kokonaishinta</div>
                          <div className="text-4xl font-bold text-slate-900 tracking-tight">
-                             {pricing.totalWithVat.toLocaleString('fi-FI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                             {(pricing.totalWithVat || 0).toLocaleString('fi-FI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                          </div>
                      </div>
                  </div>
@@ -365,7 +373,7 @@ const SummaryTab: React.FC = () => {
                              <td className="py-2 font-bold text-slate-700">{ms.order}.</td>
                              <td className="py-2 text-slate-600">{ms.description}</td>
                              <td className="py-2 text-right text-slate-600">{ms.percentage} %</td>
-                             <td className="py-2 text-right font-medium text-slate-900">{ms.amount.toLocaleString('fi-FI', {minimumFractionDigits: 2})} €</td>
+                             <td className="py-2 text-right font-medium text-slate-900">{(ms.amount || 0).toLocaleString('fi-FI', {minimumFractionDigits: 2})} €</td>
                          </tr>
                      ))}
                  </tbody>

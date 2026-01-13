@@ -4,6 +4,15 @@ import { useQuotation } from '../../context/QuotationContext';
 const Footer: React.FC = () => {
   const { pricing } = useQuotation();
 
+  // Helper to safe format currency
+  const formatMoney = (amount: number) => {
+    return (Number(amount) || 0).toLocaleString('fi-FI', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+  
+  const formatPercent = (amount: number) => {
+     return (Number(amount) || 0).toLocaleString('fi-FI');
+  };
+
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-t border-gray-200 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)]">
       <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
@@ -13,11 +22,11 @@ const Footer: React.FC = () => {
           <div className="hidden sm:flex gap-8 text-sm">
             <div className="flex flex-col">
               <span className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Omakustanne</span>
-              <span className="font-medium text-gray-700">{pricing.costPrice.toLocaleString('fi-FI', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €</span>
+              <span className="font-medium text-gray-700">{(pricing.costPrice || 0).toLocaleString('fi-FI', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">ALV {pricing.vatPercentage.toLocaleString('fi-FI')}%</span>
-              <span className="font-medium text-gray-700">{pricing.vatAmount.toLocaleString('fi-FI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+              <span className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">ALV {formatPercent(pricing.vatPercentage)}%</span>
+              <span className="font-medium text-gray-700">{formatMoney(pricing.vatAmount)} €</span>
             </div>
           </div>
           
@@ -30,7 +39,7 @@ const Footer: React.FC = () => {
              <div className="text-right">
               <span className="hidden sm:block text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-0.5">Yhteensä (sis. alv)</span>
               <span className="text-xl sm:text-2xl font-bold text-blue-700 tabular-nums leading-none">
-                {pricing.totalWithVat.toLocaleString('fi-FI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                {formatMoney(pricing.totalWithVat)} €
               </span>
             </div>
             

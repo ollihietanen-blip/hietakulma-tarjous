@@ -11,6 +11,7 @@ import InstallationTab from './components/Tabs/InstallationTab';
 import PricingTab from './components/Tabs/PricingTab';
 import DeliveryTab from './components/Tabs/DeliveryTab';
 import SummaryTab from './components/Tabs/SummaryTab';
+import DebugPanel from './components/Debug/DebugPanel';
 
 export type TabType = 'info' | 'documents' | 'elements' | 'products' | 'installation' | 'pricing' | 'delivery' | 'summary';
 
@@ -40,6 +41,7 @@ function App() {
         </main>
         
         <Footer />
+        <DebugPanel />
       </div>
     </QuotationProvider>
   );
