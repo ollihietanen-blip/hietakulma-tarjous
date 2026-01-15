@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
 import Breadcrumb from './Breadcrumb';
+import SendQuotationModal from '../Modals/SendQuotationModal';
 import { 
     Save, ArrowLeft, Send, CheckCircle, XCircle, 
     ShieldCheck, Undo2, Lock, FileCheck, Check, RefreshCw, AlertCircle
@@ -8,8 +9,9 @@ import {
 import { QuotationStatus } from '../../types';
 
 const Header: React.FC = () => {
-  const { quotation, workflow, pricing, saveStatus, saveQuotation } = useQuotation();
+  const { quotation, workflow, pricing, saveStatus, saveQuotation, sendQuotationToCustomer } = useQuotation();
   const { status } = quotation;
+  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
 
   // Status Badge Logic
   const getStatusBadge = () => {
@@ -69,10 +71,10 @@ const Header: React.FC = () => {
                         <Undo2 size={16} /> Muokkaa
                       </button>
                       <button 
-                        onClick={() => workflow.markSent()}
+                        onClick={() => setIsSendModalOpen(true)}
                         className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors rounded-lg shadow-sm"
                       >
-                        <Send size={16} /> Merkitse lähetetyksi
+                        <Send size={16} /> Lähetä asiakkaalle
                       </button>
                  </div>
               );
@@ -204,6 +206,19 @@ const Header: React.FC = () => {
            <div className="flex-shrink-0">{renderActions()}</div>
         </div>
       </div>
+      
+      {/* Send Quotation Modal */}
+      <SendQuotationModal
+        isOpen={isSendModalOpen}
+        onClose={() => setIsSendModalOpen(false)}
+        onSend={(message) => {
+          sendQuotationToCustomer(message);
+          setIsSendModalOpen(false);
+        }}
+        quotation={quotation}
+        version={quotation.versions.find(v => v.id === quotation.currentVersionId)}
+        previousVersion={quotation.versions.find(v => v.isSent && v.id !== quotation.currentVersionId)}
+      />
     </header>
   );
 };

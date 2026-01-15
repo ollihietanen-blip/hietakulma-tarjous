@@ -362,6 +362,7 @@ interface QuotationContextType {
   removeCommunicationTask: (id: string) => void;
   // Post-Acceptance Actions
   markInstructionsSent: (instructions: string[]) => void;
+  sendQuotationToCustomer: (message: string) => void;
   // Workflow Actions
   workflow: {
       submitForApproval: () => void;
@@ -951,6 +952,38 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
   };
 
+  const sendQuotationToCustomer = (message: string) => {
+    setQuotation(prev => {
+      // Paranna ohjetiedostoa kun tarjouslaskenta valmistuu
+      const improvedInstruction = improveAnalysisInstruction(prev);
+      
+      // Lisää viesti asiakkaan viesteihin
+      const customerMessage: Message = {
+        id: generateId(),
+        timestamp: new Date(),
+        author: prev.project.owner || 'Olli Hietanen',
+        text: message,
+        type: 'customer'
+      };
+
+      // Merkitse versio lähetetyksi
+      const updatedVersions = prev.versions.map(v => 
+        v.id === prev.currentVersionId 
+          ? { ...v, isSent: true, sentAt: new Date(), status: 'sent' as QuotationStatus }
+          : v
+      );
+
+      return {
+        ...prev,
+        status: 'sent',
+        sentAt: new Date(),
+        versions: updatedVersions,
+        messages: [...prev.messages, customerMessage],
+        aiAnalysisInstruction: improvedInstruction
+      };
+    });
+  };
+
   // --- Workflow Actions ---
 
   const workflow = {
@@ -1074,6 +1107,7 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       createNewVersion,
       switchToVersion,
       sendVersion,
+      sendQuotationToCustomer,
       workflow
     }}>
       {children}

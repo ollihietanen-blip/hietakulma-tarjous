@@ -447,7 +447,8 @@ const ProjectDashboardView: React.FC<ProjectDashboardViewProps> = ({ onNext }) =
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        sendVersion(version.id);
+                                                        // Open send modal instead of direct send
+                                                        // sendVersion(version.id);
                                                     }}
                                                     className="p-1.5 hover:bg-green-100 rounded transition-colors"
                                                     title="Lähetä tämä versio asiakkaalle"

@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "convex": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "convex@latest",
+        "mcp",
+        "start"
+      ],
+      "env": {
+        "CONVEX_PROJECT": "original-aardvark-584",
+        "CONVEX_URL": "https://original-aardvark-584.convex.cloud"
+      }
+    }
+  }
+}
