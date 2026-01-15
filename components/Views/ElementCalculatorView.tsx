@@ -150,8 +150,24 @@ const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplet
       const imageData = await Promise.all(imagePromises);
 
       // Hae ohjetiedosto (parantuu koko ajan)
-      const instruction = quotation.aiAnalysisInstruction?.instructionText || 
-        `Analysoi nämä rakennussuunnitelmat (pohjapiirustus, julkisivupiirustus, leikkauspiirustus) ja anna suositukset puuelementeistä ja ristikoista.`;
+      // Lataa ohjeistus tiedostosta tai käytä tallennettua versiota
+      let instruction = quotation.aiAnalysisInstruction?.instructionText;
+      
+      if (!instruction) {
+        // Lataa oletusohjeistus tiedostosta
+        try {
+          const { loadAIInstruction, getAIInstructionWithContext } = await import('../../utils/loadAIInstruction');
+          const baseInstruction = await loadAIInstruction();
+          instruction = getAIInstructionWithContext(
+            baseInstruction,
+            quotation.project.buildingType,
+            quotation.aiAnalysisInstruction?.examples
+          );
+        } catch (error) {
+          console.warn('Could not load AI instruction, using fallback:', error);
+          instruction = `Analysoi nämä rakennussuunnitelmat (pohjapiirustus, julkisivupiirustus, leikkauspiirustus) ja anna suositukset puuelementeistä ja ristikoista.`;
+        }
+      }
 
       // Prepare prompt for Gemini
       const prompt = `${instruction}
