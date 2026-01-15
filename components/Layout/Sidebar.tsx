@@ -135,11 +135,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
       `}>
         {/* Brand */}
         <div className="p-6 border-b border-slate-800 flex justify-between items-center">
-          <div className="flex flex-col">
-            <span className="font-display font-bold text-2xl tracking-widest text-white uppercase leading-none">
-              Hietakulma
-            </span>
-            <span className="text-[10px] tracking-[0.3em] text-slate-500 uppercase mt-1 font-sans font-medium">
+          <div className="flex flex-col gap-2">
+            <img 
+              src="/images/Hietakulma_logo_cmyk_valk.png" 
+              alt="Hietakulma" 
+              className="h-8 w-auto"
+            />
+            <span className="text-[10px] tracking-[0.3em] text-slate-500 uppercase font-sans font-medium">
               Myynti
             </span>
           </div>

@@ -23,7 +23,7 @@ const DocumentsTab: React.FC = () => {
     }
   };
 
-  const inputClass = "w-28 text-right bg-white border border-slate-300 text-slate-900 rounded-lg shadow-sm font-medium hover:border-blue-400 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 text-sm py-1.5 pr-8 transition-all duration-200 outline-none";
+  const inputClass = "w-28 text-right bg-white border border-slate-300 text-slate-900 rounded-lg card-shadow font-medium hover:border-hieta-wood-accent focus:bg-white focus:border-hieta-blue focus:ring-2 focus:ring-hieta-blue/20 text-sm py-1.5 pr-8 transition-all duration-200 outline-none";
 
   return (
     <div className="space-y-8">
@@ -32,9 +32,9 @@ const DocumentsTab: React.FC = () => {
             <h1 className="text-2xl font-bold text-slate-900 mb-2">Dokumentit & Suunnittelu</h1>
             <p className="text-slate-500">Määritä tarjoukseen sisältyvät suunnitelmat ja niiden hinnat.</p>
          </div>
-         <div className="bg-blue-50 px-5 py-4 rounded-xl border border-blue-200 text-right shadow-sm">
-             <div className="text-xs text-blue-600 font-bold uppercase tracking-wide mb-1">Kustannus</div>
-             <div className="text-2xl font-bold text-blue-900">
+         <div className="bg-hieta-blue/10 px-5 py-4 rounded-xl border border-hieta-blue/20 text-right card-shadow">
+             <div className="text-xs text-hieta-blue font-bold uppercase tracking-wide mb-1">Kustannus</div>
+             <div className="text-2xl font-bold text-hieta-blue">
                 {(pricing.documentsCost || 0).toLocaleString('fi-FI', { minimumFractionDigits: 2 })} €
              </div>
          </div>
@@ -42,7 +42,7 @@ const DocumentsTab: React.FC = () => {
 
       <div className="space-y-8">
         {Object.entries(categories).map(([key, docs]) => (
-          <div key={key} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div key={key} className="bg-white rounded-xl card-shadow border border-slate-200 overflow-hidden hover-lift">
             <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
                 <h2 className="text-lg font-bold text-slate-900 capitalize flex items-center gap-2">
                     <FileText size={18} className="text-slate-400" />
@@ -60,7 +60,7 @@ const DocumentsTab: React.FC = () => {
                      className="flex items-center gap-4 cursor-pointer group flex-1"
                      onClick={() => updateDocument(doc.id, { included: !doc.included })}
                   >
-                    <div className={`flex-shrink-0 transition-colors ${doc.included ? 'text-blue-600' : 'text-slate-300 group-hover:text-slate-400'}`}>
+                    <div className={`flex-shrink-0 transition-colors ${doc.included ? 'text-hieta-blue' : 'text-slate-300 group-hover:text-slate-400'}`}>
                       {doc.included ? <CheckSquare size={24} /> : <Square size={24} />}
                     </div>
                     <span className={`text-sm font-medium ${doc.included ? 'text-slate-900' : 'text-slate-400'}`}>

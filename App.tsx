@@ -46,7 +46,11 @@ function App() {
                 >
                     <Menu size={24} />
                 </button>
-                <span className="font-display font-bold text-lg tracking-wider uppercase">Hietakulma</span>
+                <img 
+                    src="/images/Hietakulma_logo_cmyk_valk.png" 
+                    alt="Hietakulma" 
+                    className="h-6 w-auto"
+                />
             </div>
             <div className="w-8 h-8 rounded-full bg-hieta-sand text-hieta-black flex items-center justify-center font-bold text-xs">
                 OH

@@ -46,7 +46,7 @@ const InstallationTab: React.FC = () => {
                   price: `${pricePerHour}€ / h (alv 0%)`,
                   total: `Työn arvo n. ${totalEstimate.toLocaleString('fi-FI')} €`
               },
-              icon: <Timer size={14} className="text-blue-500" />
+              icon: <Timer size={14} className="text-hieta-blue" />
           };
       }
 
@@ -117,9 +117,9 @@ const InstallationTab: React.FC = () => {
       </div>
       
       {/* Quick Summary Bar */}
-      <div className="bg-white border border-slate-200 rounded-lg p-4 flex flex-wrap gap-4 items-center text-sm shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-lg p-4 flex flex-wrap gap-4 items-center text-sm card-shadow">
           <div className="font-bold text-slate-700 flex items-center gap-2">
-              <Calculator size={16} className="text-blue-500"/>
+              <Calculator size={16} className="text-hieta-blue"/>
               Lasketut määrät:
           </div>
           <div className="bg-slate-50 px-3 py-1 rounded border border-slate-100 text-slate-600">
@@ -148,21 +148,21 @@ const InstallationTab: React.FC = () => {
                     className={`
                         relative flex flex-col rounded-xl border-2 cursor-pointer transition-all duration-300 overflow-hidden
                         ${isSelected 
-                            ? 'border-blue-600 bg-white shadow-xl scale-[1.02] z-10' 
-                            : 'border-slate-200 bg-white hover:border-blue-300 hover:shadow-lg'}
+                            ? 'border-hieta-blue bg-white card-shadow-lg scale-[1.02] z-10' 
+                            : 'border-slate-200 bg-white hover:border-hieta-blue hover:shadow-lg hover-lift'}
                     `}
                 >
                     {isSelected && (
-                        <div className="absolute top-0 inset-x-0 h-2 bg-blue-600" />
+                        <div className="absolute top-0 inset-x-0 h-2 bg-hieta-blue" />
                     )}
                     
                     <div className="p-6 flex-1">
                         <div className="flex justify-between items-start mb-4">
-                            <div className={`${isSelected ? 'text-blue-600' : 'text-slate-400'}`}>
+                            <div className={`${isSelected ? 'text-hieta-blue' : 'text-slate-400'}`}>
                                 {getLevelIcon(level.icon)}
                             </div>
                             {isSelected ? (
-                                <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                                <span className="bg-hieta-blue text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
                                     Valittu
                                 </span>
                             ) : (
@@ -180,7 +180,7 @@ const InstallationTab: React.FC = () => {
                         <div className="space-y-4 mb-6">
                             <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
                                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Arvioitu asennuskustannus</div>
-                                <div className={`text-xl font-bold ${installationShare > 0 ? 'text-blue-700' : 'text-slate-700'}`}>
+                                <div className={`text-xl font-bold ${installationShare > 0 ? 'text-hieta-blue' : 'text-slate-700'}`}>
                                     +{installationShare.toLocaleString('fi-FI', { maximumFractionDigits: 0 })} €
                                 </div>
                                 <div className="text-xs text-slate-400 font-medium">

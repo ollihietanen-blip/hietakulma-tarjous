@@ -72,7 +72,7 @@ const ProductsTab: React.FC = () => {
   };
 
   // Styles - Improved touch targets for mobile
-  const inputClass = "w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:bg-white text-slate-900 font-medium text-sm py-2 px-2 transition-all duration-200 outline-none placeholder:text-slate-300 focus:shadow-sm rounded-t-sm min-w-[60px]";
+  const inputClass = "w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-hieta-blue focus:bg-white text-slate-900 font-medium text-sm py-2 px-2 transition-all duration-200 outline-none placeholder:text-slate-300 focus:shadow-sm rounded-t-sm min-w-[60px]";
   const tableHeaderClass = "px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50 border-b border-slate-200 whitespace-nowrap";
 
   // Calculate totals for dashboard
@@ -93,14 +93,14 @@ const ProductsTab: React.FC = () => {
           </div>
           
           <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 min-w-[160px] flex-shrink-0">
-                  <div className="bg-blue-50 p-2 rounded-lg text-blue-600"><LayoutGrid size={20}/></div>
+              <div className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex items-center gap-3 min-w-[160px] flex-shrink-0 hover-lift">
+                  <div className="bg-hieta-blue/10 p-2 rounded-lg text-hieta-blue"><LayoutGrid size={20}/></div>
                   <div>
                       <div className="text-[10px] uppercase font-bold text-slate-400">Ikkunat & Ovet</div>
                       <div className="text-lg font-bold text-slate-900">{(windowsTotal + doorsTotal).toLocaleString('fi-FI')} €</div>
                   </div>
               </div>
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 min-w-[160px] flex-shrink-0">
+              <div className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex items-center gap-3 min-w-[160px] flex-shrink-0 hover-lift">
                   <div className="bg-emerald-50 p-2 rounded-lg text-emerald-600"><Package size={20}/></div>
                   <div>
                       <div className="text-[10px] uppercase font-bold text-slate-400">Materiaalit</div>
@@ -126,7 +126,7 @@ const ProductsTab: React.FC = () => {
           if (!isSpecial) Icon = Layers;
 
           return (
-            <div key={section.id} className={`bg-white rounded-xl shadow-sm border transition-all duration-300 ${isOpen ? 'border-blue-200 ring-1 ring-blue-50' : 'border-slate-200 hover:border-slate-300'}`}>
+            <div key={section.id} className={`bg-white rounded-xl card-shadow border transition-all duration-300 hover-lift ${isOpen ? 'border-hieta-blue/30 ring-1 ring-hieta-blue/10' : 'border-slate-200 hover:border-hieta-wood-accent'}`}>
                 
                 {/* Section Header */}
                 <div 
@@ -134,10 +134,10 @@ const ProductsTab: React.FC = () => {
                     onClick={() => toggleSection(section.id)}
                 >
                     <div className="flex items-center gap-3">
-                        <button className={`p-1 rounded-md transition-colors ${isOpen ? 'bg-blue-100 text-blue-600' : 'text-slate-400 hover:bg-slate-100'}`}>
+                        <button className={`p-1 rounded-md transition-colors ${isOpen ? 'bg-hieta-blue/20 text-hieta-blue' : 'text-slate-400 hover:bg-slate-100'}`}>
                             {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                         </button>
-                        <div className={`p-2 rounded-lg ${isSpecial ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                        <div className={`p-2 rounded-lg ${isSpecial ? 'bg-hieta-blue text-white' : 'bg-slate-100 text-slate-600'}`}>
                             <Icon size={18} />
                         </div>
                         <div>
@@ -157,7 +157,7 @@ const ProductsTab: React.FC = () => {
                                 else handleAddGeneric(section.id);
                                 if (!isOpen) toggleSection(section.id);
                             }}
-                            className="w-full sm:w-auto text-sm bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-200 font-bold px-3 py-2 rounded-lg shadow-sm transition-all flex items-center justify-center gap-2"
+                            className="w-full sm:w-auto text-sm bg-white border border-slate-200 text-slate-700 hover:text-hieta-blue hover:border-hieta-blue/30 font-bold px-3 py-2 rounded-lg card-shadow transition-all duration-200 hover-lift flex items-center justify-center gap-2"
                         >
                             <Plus size={16} /> Lisää rivi
                         </button>
@@ -180,7 +180,7 @@ const ProductsTab: React.FC = () => {
                                         else if (isDoors) handleAddDoor();
                                         else handleAddGeneric(section.id);
                                     }}
-                                    className="text-blue-600 font-bold text-sm mt-2 hover:underline"
+                                    className="text-hieta-blue font-bold text-sm mt-2 hover:underline"
                                 >
                                     Lisää ensimmäinen rivi
                                 </button>
@@ -269,7 +269,7 @@ const ProductsTab: React.FC = () => {
                                                         type="number"
                                                         value={item.quantity}
                                                         onChange={(e) => updateProduct(section.id, item.id, { quantity: Number(e.target.value) })}
-                                                        className={`${inputClass} text-right font-bold bg-blue-50/30`}
+                                                        className={`${inputClass} text-right font-bold bg-hieta-blue/10`}
                                                     />
                                                 </td>
                                                 <td className="px-4 py-3 align-top">
@@ -340,7 +340,7 @@ const ProductsTab: React.FC = () => {
                                                         type="number"
                                                         value={item.quantity}
                                                         onChange={(e) => updateProduct(section.id, item.id, { quantity: Number(e.target.value) })}
-                                                        className={`${inputClass} text-right font-bold bg-blue-50/30`}
+                                                        className={`${inputClass} text-right font-bold bg-hieta-blue/10`}
                                                     />
                                                 </td>
                                                 <td className="px-4 py-2">

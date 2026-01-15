@@ -73,14 +73,14 @@ const CustomersView: React.FC<CustomersViewProps> = ({ onSelectProject }) => {
       <div className="w-1/3 border-r border-slate-200 bg-white flex flex-col">
           <div className="p-6 border-b border-slate-100">
               <h1 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                  <Users className="text-blue-600" /> Asiakkaat
+                  <Users className="text-hieta-blue" /> Asiakkaat
               </h1>
               <div className="relative">
                   <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
                   <input 
                     type="text" 
                     placeholder="Hae asiakasta..." 
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-2 bg-hieta-wood-light/50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hieta-blue/20 focus:border-hieta-blue card-shadow"
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                   />
@@ -91,10 +91,10 @@ const CustomersView: React.FC<CustomersViewProps> = ({ onSelectProject }) => {
                   <div 
                     key={c.id}
                     onClick={() => handleSelectCustomer(c)}
-                    className={`p-4 border-b border-slate-50 cursor-pointer transition-colors hover:bg-slate-50 ${selectedId === c.id ? 'bg-blue-50 border-blue-100' : ''}`}
+                    className={`p-4 border-b border-slate-50 cursor-pointer transition-all duration-200 hover:bg-hieta-wood-light/30 hover-lift ${selectedId === c.id ? 'bg-hieta-blue/10 border-hieta-blue/30' : ''}`}
                   >
                       <div className="flex justify-between items-start mb-1">
-                          <span className={`font-bold ${selectedId === c.id ? 'text-blue-900' : 'text-slate-900'}`}>
+                          <span className={`font-bold ${selectedId === c.id ? 'text-hieta-blue' : 'text-slate-900'}`}>
                               {c.company || c.name}
                           </span>
                           <span className="text-[10px] uppercase font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
@@ -106,7 +106,7 @@ const CustomersView: React.FC<CustomersViewProps> = ({ onSelectProject }) => {
                       {c.tags && c.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mb-2">
                               {c.tags.slice(0, 3).map(tag => (
-                                  <span key={tag} className="text-[10px] bg-blue-50 text-blue-600 px-1.5 rounded-sm">
+                                  <span key={tag} className="text-[10px] bg-hieta-blue/10 text-hieta-blue px-2 py-0.5 rounded-md border border-hieta-blue/20">
                                       {tag}
                                   </span>
                               ))}
@@ -128,7 +128,7 @@ const CustomersView: React.FC<CustomersViewProps> = ({ onSelectProject }) => {
               ))}
           </div>
           <div className="p-4 border-t border-slate-200 bg-slate-50">
-              <button className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-2.5 rounded-lg font-bold text-sm hover:bg-black transition-colors">
+              <button className="w-full flex items-center justify-center gap-2 bg-hieta-black text-white py-2.5 rounded-lg font-bold text-sm hover:bg-slate-800 transition-all duration-200 card-shadow hover-lift">
                   <Plus size={16} /> Uusi Asiakas
               </button>
           </div>
@@ -151,7 +151,7 @@ const CustomersView: React.FC<CustomersViewProps> = ({ onSelectProject }) => {
                               </div>
                               <p className="text-slate-500 text-lg">{quotation.customer.contactPerson}</p>
                           </div>
-                          <button className="text-sm text-blue-600 font-bold hover:underline bg-blue-50 px-4 py-2 rounded-lg">Muokkaa tietoja</button>
+                          <button className="text-sm text-hieta-blue font-bold hover:bg-hieta-blue/10 bg-hieta-blue/5 px-4 py-2 rounded-lg transition-all duration-200 border border-hieta-blue/20">Muokkaa tietoja</button>
                       </div>
 
                       <div className="grid grid-cols-2 gap-8 text-sm border-t border-slate-100 pt-6">

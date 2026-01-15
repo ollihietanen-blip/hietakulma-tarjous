@@ -21,7 +21,7 @@ const QuotationView: React.FC = () => {
     <div className="flex flex-col h-screen overflow-hidden bg-slate-50 relative">
       <Header />
       
-      <div className="flex-none bg-white border-b border-slate-200 shadow-sm z-40">
+      <div className="flex-none bg-white border-b border-slate-200 card-shadow z-40">
         <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
       

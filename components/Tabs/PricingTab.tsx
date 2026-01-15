@@ -63,14 +63,14 @@ export const PricingTab: React.FC = () => {
                         step="0.5"
                         value={quotation.pricing.categoryMarkups.elements}
                         onChange={(e) => updateCategoryMarkup('elements', Number(e.target.value))}
-                        className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-hieta-blue/20 focus:border-hieta-blue outline-none card-shadow"
                     />
                     <span className="absolute right-2 top-2.5 text-xs text-slate-400">%</span>
                 </div>
                 </div>
                 <div className="col-span-5 text-right space-y-0.5">
                     <div className="text-xs text-slate-500">Osto: {pricing.breakdown.elements.cost.toFixed(0)} €</div>
-                    <div className="text-sm font-bold text-blue-600">Myynti: {pricing.breakdown.elements.sellingPrice.toFixed(0)} €</div>
+                    <div className="text-sm font-bold text-hieta-blue">Myynti: {pricing.breakdown.elements.sellingPrice.toFixed(0)} €</div>
                 </div>
             </div>
             
@@ -87,7 +87,7 @@ export const PricingTab: React.FC = () => {
                             step="0.5"
                             value={quotation.pricing.categoryMarkups.trusses}
                             onChange={(e) => updateCategoryMarkup('trusses', Number(e.target.value))}
-                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-hieta-blue/20 focus:border-hieta-blue outline-none card-shadow"
                         />
                         <span className="absolute right-2 top-2.5 text-xs text-slate-400">%</span>
                     </div>
@@ -111,7 +111,7 @@ export const PricingTab: React.FC = () => {
                             step="0.5"
                             value={quotation.pricing.categoryMarkups.windowsDoors}
                             onChange={(e) => updateCategoryMarkup('windowsDoors', Number(e.target.value))}
-                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-hieta-blue/20 focus:border-hieta-blue outline-none card-shadow"
                         />
                         <span className="absolute right-2 top-2.5 text-xs text-slate-400">%</span>
                     </div>
@@ -135,7 +135,7 @@ export const PricingTab: React.FC = () => {
                             step="0.5"
                             value={quotation.pricing.categoryMarkups.worksiteDeliveries}
                             onChange={(e) => updateCategoryMarkup('worksiteDeliveries', Number(e.target.value))}
-                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-hieta-blue/20 focus:border-hieta-blue outline-none card-shadow"
                         />
                         <span className="absolute right-2 top-2.5 text-xs text-slate-400">%</span>
                     </div>
@@ -159,7 +159,7 @@ export const PricingTab: React.FC = () => {
                             step="0.5"
                             value={quotation.pricing.categoryMarkups.installation}
                             onChange={(e) => updateCategoryMarkup('installation', Number(e.target.value))}
-                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-hieta-blue/20 focus:border-hieta-blue outline-none card-shadow"
                         />
                         <span className="absolute right-2 top-2.5 text-xs text-slate-400">%</span>
                     </div>
@@ -183,7 +183,7 @@ export const PricingTab: React.FC = () => {
                             step="0.5"
                             value={quotation.pricing.categoryMarkups.transportation}
                             onChange={(e) => updateCategoryMarkup('transportation', Number(e.target.value))}
-                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-hieta-blue/20 focus:border-hieta-blue outline-none card-shadow"
                         />
                         <span className="absolute right-2 top-2.5 text-xs text-slate-400">%</span>
                     </div>
@@ -207,7 +207,7 @@ export const PricingTab: React.FC = () => {
                             step="0.5"
                             value={quotation.pricing.categoryMarkups.design}
                             onChange={(e) => updateCategoryMarkup('design', Number(e.target.value))}
-                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                            className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-hieta-blue/20 focus:border-hieta-blue outline-none card-shadow"
                         />
                         <span className="absolute right-2 top-2.5 text-xs text-slate-400">%</span>
                     </div>
@@ -238,7 +238,7 @@ export const PricingTab: React.FC = () => {
                         step="0.1"
                         value={quotation.pricing.commissionPercentage}
                         onChange={(e) => updatePricingSettings({ commissionPercentage: Number(e.target.value) })}
-                        className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        className="w-full pl-3 pr-6 py-2 border border-slate-300 rounded-lg text-right font-bold focus:ring-2 focus:ring-hieta-blue/20 focus:border-hieta-blue outline-none card-shadow"
                         />
                         <span className="absolute right-2 top-2.5 text-xs text-slate-400">%</span>
                     </div>

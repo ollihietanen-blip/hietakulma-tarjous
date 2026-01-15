@@ -15,6 +15,7 @@ export interface Message {
 }
 
 export type CostEntryCategory = 'elements' | 'products' | 'trusses' | 'installation' | 'logistics' | 'design' | 'other';
+export type CostType = 'material' | 'labor'; // Materiaalikustannus tai työkustannus
 
 export interface CostEntry {
   id: string;
@@ -23,6 +24,22 @@ export interface CostEntry {
   description: string;
   amount: number; // Alv 0%
   supplier?: string;
+  costType: CostType; // Materiaalikustannus tai työkustannus
+  laborHours?: number; // Työtunnit (jos työkustannus)
+  laborRate?: number; // Tuntihinta (jos työkustannus, haetaan tietokannasta myöhemmin)
+}
+
+export interface CommunicationTask {
+  id: string;
+  type: 'call' | 'email' | 'meeting' | 'other';
+  title: string;
+  description?: string;
+  dueDate?: Date;
+  completed: boolean;
+  completedAt?: Date;
+  assignedTo: string;
+  createdAt: Date;
+  notes?: string; // Sanelusta tulevat muistiinpanot
 }
 
 export interface SentInstruction {
@@ -48,11 +65,40 @@ export interface Schedule {
   installationEnd?: Date;
 }
 
+export interface AIAnalysisInstruction {
+  version: number;
+  lastUpdated: Date;
+  instructionText: string;
+  examples: Array<{
+    input: string;
+    output: string;
+    success: boolean;
+  }>;
+}
+
+export interface QuotationVersion {
+  id: string;
+  versionNumber: number;
+  name: string; // esim. "Versio 1", "Versio 2 - Muutettu asiakkaan pyynnöstä"
+  createdAt: Date;
+  createdBy: string;
+  status: QuotationStatus;
+  sentAt?: Date;
+  isActive: boolean; // Onko tämä versio aktiivinen (muokattavissa)
+  isSent: boolean; // Onko tämä versio lähetetty asiakkaalle
+  notes?: string; // Muistiinpanot versiosta
+  quotation: Omit<Quotation, 'versions' | 'currentVersionId'>; // Koko tarjouslaskenta-objekti
+}
+
 export interface Quotation {
   id: string;
   createdAt: Date;
   updatedAt: Date;
   status: QuotationStatus;
+  
+  // Versiointi
+  versions: QuotationVersion[];
+  currentVersionId: string; // Nykyisen aktiivisen version ID
   
   // Workflow Metadata
   approval?: {
@@ -83,9 +129,13 @@ export interface Quotation {
   
   // Communication
   messages: Message[];
+  communicationTasks: CommunicationTask[]; // Tehtävälista kommunikointiin
   
   // Attachments
   files: ProjectFile[];
+
+  // AI Analysis Instruction (parantuu koko ajan)
+  aiAnalysisInstruction?: AIAnalysisInstruction;
 
   project: Project;
   schedule: Schedule; // New Schedule Object

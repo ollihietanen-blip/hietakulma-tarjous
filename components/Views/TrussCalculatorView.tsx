@@ -250,14 +250,14 @@ const TrussCalculatorView: React.FC<TrussCalculatorViewProps> = ({ onComplete })
       { id: 'portal', label: 'Kehä', icon: <Share size={24} className="-scale-y-100" /> },
   ];
 
-  const inputClass = "w-full bg-white border border-slate-300 text-slate-900 rounded-lg p-3 font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all";
+  const inputClass = "w-full bg-white border border-slate-300 text-slate-900 rounded-lg p-3 font-medium focus:border-hieta-blue focus:ring-2 focus:ring-hieta-blue/20 outline-none transition-all card-shadow";
   const labelClass = "block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2";
 
   return (
     <div className="p-8 max-w-7xl mx-auto animate-in fade-in duration-300">
       <div className="mb-8 border-b border-slate-200 pb-6">
         <h1 className="text-3xl font-display font-bold text-slate-900 flex items-center gap-3">
-          <Triangle className="text-blue-600" /> Ristikkolaskenta
+          <Triangle className="text-hieta-blue" /> Ristikkolaskenta
         </h1>
         <p className="text-slate-500 mt-2 max-w-3xl">
           Määritä kattoristikoiden geometria ja kuormat. Laskuri arvioi hinnan, painon ja kuljetusmitat.
@@ -270,26 +270,26 @@ const TrussCalculatorView: React.FC<TrussCalculatorViewProps> = ({ onComplete })
           <div className="lg:col-span-7 space-y-6">
               
               {/* 1. Type Selection */}
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <div className="bg-white p-6 rounded-xl border border-slate-200 card-shadow hover-lift">
                   <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-                      <Square size={18} className="text-blue-500"/> 1. Ristikon tyyppi
+                      <Square size={18} className="text-hieta-blue"/> 1. Ristikon tyyppi
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {typeOptions.map(opt => (
                            <button 
                               key={opt.id}
                               onClick={() => handleTypeChange(opt.id)}
-                              className={`p-4 rounded-lg border-2 flex flex-col items-center justify-center gap-2 transition-all ${inputs.type === opt.id ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                              className={`p-4 rounded-lg border-2 flex flex-col items-center justify-center gap-2 transition-all hover-lift ${inputs.type === opt.id ? 'border-hieta-blue bg-hieta-blue/10' : 'border-slate-200 bg-white hover:border-hieta-wood-accent'}`}
                            >
-                                <div className={inputs.type === opt.id ? 'text-blue-600' : 'text-slate-400'}>{opt.icon}</div>
-                                <span className={`font-bold text-sm ${inputs.type === opt.id ? 'text-blue-800' : 'text-slate-600'}`}>{opt.label}</span>
+                                <div className={inputs.type === opt.id ? 'text-hieta-blue' : 'text-slate-400'}>{opt.icon}</div>
+                                <span className={`font-bold text-sm ${inputs.type === opt.id ? 'text-hieta-blue' : 'text-slate-600'}`}>{opt.label}</span>
                            </button>
                       ))}
                   </div>
               </div>
 
               {/* 2. Geometry */}
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <div className="bg-white p-6 rounded-xl border border-slate-200 card-shadow hover-lift">
                   <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
                       <Ruler size={18} className="text-orange-500"/> 2. Mitat
                   </h3>
@@ -314,7 +314,7 @@ const TrussCalculatorView: React.FC<TrussCalculatorViewProps> = ({ onComplete })
               </div>
 
               {/* 3. Specs & Accessories */}
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <div className="bg-white p-6 rounded-xl border border-slate-200 card-shadow hover-lift">
                   <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
                       <Scale size={18} className="text-green-600"/> 3. Kuormat & Varusteet
                   </h3>
@@ -340,8 +340,8 @@ const TrussCalculatorView: React.FC<TrussCalculatorViewProps> = ({ onComplete })
                   <div className="border-t border-slate-100 pt-4">
                       <label className={labelClass}>Lisätarvikkeet</label>
                       <div className="space-y-3">
-                          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-                              <div className={`w-5 h-5 rounded border flex items-center justify-center ${inputs.includeBracing ? 'bg-blue-600 border-blue-600' : 'bg-white border-slate-300'}`}>
+                          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 hover:bg-hieta-wood-light/30 transition-all hover-lift">
+                              <div className={`w-5 h-5 rounded border flex items-center justify-center ${inputs.includeBracing ? 'bg-hieta-blue border-hieta-blue' : 'bg-white border-slate-300'}`}>
                                   {inputs.includeBracing && <CheckSquare size={14} className="text-white" />}
                               </div>
                               <input type="checkbox" className="hidden" checked={inputs.includeBracing} onChange={e => handleInputChange('includeBracing', e.target.checked)} />
@@ -354,8 +354,8 @@ const TrussCalculatorView: React.FC<TrussCalculatorViewProps> = ({ onComplete })
                               </div>
                           </label>
 
-                          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-                              <div className={`w-5 h-5 rounded border flex items-center justify-center ${inputs.includeAnchors ? 'bg-blue-600 border-blue-600' : 'bg-white border-slate-300'}`}>
+                          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 hover:bg-hieta-wood-light/30 transition-all hover-lift">
+                              <div className={`w-5 h-5 rounded border flex items-center justify-center ${inputs.includeAnchors ? 'bg-hieta-blue border-hieta-blue' : 'bg-white border-slate-300'}`}>
                                   {inputs.includeAnchors && <CheckSquare size={14} className="text-white" />}
                               </div>
                               <input type="checkbox" className="hidden" checked={inputs.includeAnchors} onChange={e => handleInputChange('includeAnchors', e.target.checked)} />
@@ -375,10 +375,10 @@ const TrussCalculatorView: React.FC<TrussCalculatorViewProps> = ({ onComplete })
           {/* Results Column */}
           <div className="lg:col-span-5 space-y-6">
               {calculations && (
-                <div className="bg-slate-900 text-white p-6 rounded-xl shadow-lg sticky top-6">
+                <div className="bg-hieta-black text-white p-6 rounded-xl card-shadow-lg sticky top-6">
                     <div className="flex justify-between items-start mb-6">
                         <h3 className="font-bold text-xl text-white">Laskennan tulokset</h3>
-                        <div className="bg-blue-600 text-xs font-bold px-2 py-1 rounded text-white">
+                        <div className="bg-hieta-blue text-xs font-bold px-2 py-1 rounded text-white">
                             AUTO-CALC
                         </div>
                     </div>

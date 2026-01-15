@@ -36,13 +36,13 @@ const SummaryTab: React.FC = () => {
     <div className="max-w-[210mm] mx-auto pb-20">
       
       {/* Toolbar - Hidden when printing */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm print:hidden mb-8">
+      <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 card-shadow print:hidden mb-8">
         <div>
            <h1 className="text-xl font-bold text-slate-900">Yhteenveto & Esikatselu</h1>
            <p className="text-sm text-slate-500">Tarkista tiedot ennen tulostusta tai PDF-tallennusta.</p>
         </div>
         <button 
-            className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-lg hover:bg-slate-800 transition-colors font-medium shadow-lg shadow-slate-200"
+            className="flex items-center gap-2 bg-hieta-black text-white px-5 py-2.5 rounded-lg hover:bg-slate-800 transition-all duration-200 font-medium card-shadow-lg hover-lift"
             onClick={() => window.print()}
         >
             <Printer size={18} />
@@ -157,7 +157,7 @@ const SummaryTab: React.FC = () => {
              <div className="text-sm space-y-3 text-slate-700">
                  <p>Toimitukseen sisältyy rakennusmateriaalien ja -osien toimitus tämän toimitussisällön mukaisesti sekä niiden mahdollinen asennus tässä toimitussisällössä olevan asennussisällön mukaisesti.</p>
                  <p>Rakenteissa tulee käyttää Hietakulma Oy:n suunnitelmien ja ohjeiden mukaisia ratkaisuja.</p>
-                 <div className="bg-slate-50 p-4 border-l-4 border-blue-500 my-4">
+                 <div className="bg-hieta-wood-light/30 p-4 border-l-4 border-hieta-blue my-4">
                      <p className="font-bold mb-1">Rakennuspaikka:</p>
                      <p>{quotation.project.address}, {quotation.project.postalCode} {quotation.project.city}</p>
                      <p>Rakennustyyppi: {getTypeLabel()}</p>
@@ -239,7 +239,7 @@ const SummaryTab: React.FC = () => {
                                             <td className="p-2 font-medium">{w.tunnus}</td>
                                             <td className="p-2">{w.width}x{w.height}</td>
                                             <td className="p-2 text-slate-600">
-                                                U:{w.uValue}, {w.glassType}, <span className="text-blue-600 font-medium">{w.frameOuterColor}</span>
+                                                U:{w.uValue}, {w.glassType}, <span className="text-hieta-blue font-medium">{w.frameOuterColor}</span>
                                             </td>
                                             <td className="p-2 text-right">{w.quantity}</td>
                                         </tr>

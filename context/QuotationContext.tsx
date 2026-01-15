@@ -18,7 +18,10 @@ import {
   CostEntry,
   Message,
   SentInstruction,
-  Schedule
+  Schedule,
+  AIAnalysisInstruction,
+  QuotationVersion,
+  CommunicationTask
 } from '../types';
 
 // Simple UUID generator for browsers that might not have crypto.randomUUID
@@ -57,6 +60,50 @@ const DEFAULT_PRICING: PricingCalculation = {
     transportation: { cost: 0, markup: 0, sellingPrice: 0, profit: 0 },
     design: { cost: 0, markup: 0, sellingPrice: 0, profit: 0 }
   }
+};
+
+// Helper to improve AI analysis instruction based on completed quotations
+const improveAnalysisInstruction = (quotation: Quotation): AIAnalysisInstruction => {
+  const current = quotation.aiAnalysisInstruction || {
+    version: 1,
+    lastUpdated: new Date(),
+    instructionText: `Analysoi rakennussuunnitelmat (pohjapiirustus, julkisivupiirustus, leikkauspiirustus) ja anna suositukset puuelementeistä ja ristikoista.
+
+Tarkista piirustuksista:
+- Rakennuksen mitat (leveys, pituus, korkeus, kerrokset)
+- Seinärakenteet ja niiden tyypit
+- Kattorakenteet ja ristikot
+- Aukot (ikkunat, ovet)
+- Erikoisrakenteet
+
+Palauta JSON-muodossa suositukset elementeistä ja ristikoista.`,
+    examples: []
+  };
+
+  // Kerää dataa valmiista tarjouslaskennoista
+  const elementCount = quotation.elements.reduce((sum, section) => sum + section.items.length, 0);
+  const productCount = quotation.products.reduce((sum, section) => sum + section.items.length, 0);
+  const totalValue = quotation.pricing.totalWithVat;
+
+  // Lisää esimerkki jos tarjouslaskenta on valmis ja onnistunut
+  if (quotation.status === 'sent' || quotation.status === 'accepted') {
+    const example = {
+      input: `Projekti: ${quotation.project.name}, ${quotation.project.buildingType}`,
+      output: `Löydetty ${elementCount} elementtiä, ${productCount} tuotetta. Kokonaisarvio: ${totalValue.toFixed(0)}€`,
+      success: quotation.status === 'accepted'
+    };
+
+    const newExamples = [...(current.examples || []), example].slice(-10); // Säilytä max 10 esimerkkiä
+
+    return {
+      version: current.version + 1,
+      lastUpdated: new Date(),
+      instructionText: current.instructionText + `\n\nHuomio: Edellisistä projekteista on opittu että ${quotation.project.buildingType}-tyyppisissä projekteissa tarvitaan keskimäärin ${elementCount} elementtiä.`,
+      examples: newExamples
+    };
+  }
+
+  return current;
 };
 
 // Helper to calculate pricing based on margins
@@ -174,7 +221,9 @@ const calculateDetailedPricing = (quotation: Quotation): PricingCalculation => {
 };
 
 // Helper to create fresh state
-const getInitialState = (): Quotation => ({
+const getInitialState = (): Quotation => {
+  const firstVersionId = generateId();
+  return {
     id: generateId(),
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -216,6 +265,7 @@ const getInitialState = (): Quotation => ({
     messages: [
         { id: generateId(), timestamp: new Date(Date.now() - 1000 * 60 * 5), author: 'Järjestelmä', text: 'Projekti luotu asiakkaalle Matti Meikäläinen.', type: 'internal' }
     ],
+    communicationTasks: [], // Tehtävälista kommunikointiin
     files: [],
     documents: STANDARD_DOCUMENTS.map(d => ({...d})), // Deep copy
     elements: [
@@ -249,8 +299,28 @@ const getInitialState = (): Quotation => ({
         ratePerKm: 2.20 
       }
     },
-    pricing: { ...DEFAULT_PRICING }
-});
+    pricing: { ...DEFAULT_PRICING },
+    // AI Analysis Instruction (parantuu koko ajan)
+    aiAnalysisInstruction: {
+      version: 1,
+      lastUpdated: new Date(),
+      instructionText: `Analysoi rakennussuunnitelmat (pohjapiirustus, julkisivupiirustus, leikkauspiirustus) ja anna suositukset puuelementeistä ja ristikoista.
+
+Tarkista piirustuksista:
+- Rakennuksen mitat (leveys, pituus, korkeus, kerrokset)
+- Seinärakenteet ja niiden tyypit
+- Kattorakenteet ja ristikot
+- Aukot (ikkunat, ovet)
+- Erikoisrakenteet
+
+Palauta JSON-muodossa suositukset elementeistä ja ristikoista.`,
+      examples: []
+    },
+    // Versiointi - luo ensimmäinen versio
+    versions: [],
+    currentVersionId: firstVersionId // Ensimmäinen versio luodaan automaattisesti
+  };
+};
 
 export type SaveStatus = 'idle' | 'saving' | 'saved';
 
@@ -285,6 +355,11 @@ interface QuotationContextType {
   removeCostEntry: (id: string) => void;
   // Communication Actions
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
+  // Communication Tasks
+  addCommunicationTask: (task: Omit<CommunicationTask, 'id' | 'createdAt' | 'completed'>) => void;
+  updateCommunicationTask: (id: string, updates: Partial<CommunicationTask>) => void;
+  completeCommunicationTask: (id: string, notes?: string) => void;
+  removeCommunicationTask: (id: string) => void;
   // Post-Acceptance Actions
   markInstructionsSent: (instructions: string[]) => void;
   // Workflow Actions
@@ -304,6 +379,33 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [quotation, setQuotation] = useState<Quotation>(getInitialState());
   const [pricing, setPricing] = useState<PricingCalculation>(DEFAULT_PRICING);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
+
+  // Luodaan ensimmäinen versio automaattisesti kun tarjouslaskenta luodaan
+  useEffect(() => {
+    if (quotation.versions.length === 0 && quotation.currentVersionId) {
+      const firstVersion: QuotationVersion = {
+        id: quotation.currentVersionId,
+        versionNumber: 1,
+        name: 'Versio 1',
+        createdAt: quotation.createdAt,
+        createdBy: 'Olli Hietanen',
+        status: quotation.status,
+        sentAt: quotation.sentAt,
+        isActive: true,
+        isSent: quotation.status === 'sent' || quotation.status === 'accepted',
+        notes: undefined,
+        quotation: {
+          ...quotation,
+          versions: [],
+          currentVersionId: ''
+        }
+      };
+      setQuotation(prev => ({
+        ...prev,
+        versions: [firstVersion]
+      }));
+    }
+  }, []); // Suoritetaan vain kerran komponentin mountissa
 
   // --- Auto-Save Effect ---
   const isInitialMount = useRef(true);
@@ -543,11 +645,21 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // --- Cost Tracking ---
 
   const addCostEntry = (entry: Omit<CostEntry, 'id'>) => {
+      // Jos työkustannus, laske summa työtunteista ja tuntihinnasta
+      let finalAmount = entry.amount;
+      if (entry.costType === 'labor' && entry.laborHours && entry.laborRate) {
+          finalAmount = entry.laborHours * entry.laborRate;
+      }
+      
       setQuotation(prev => ({
           ...prev,
           postCalculation: {
               ...prev.postCalculation,
-              entries: [...prev.postCalculation.entries, { ...entry, id: generateId() }]
+              entries: [...prev.postCalculation.entries, { 
+                  ...entry, 
+                  id: generateId(),
+                  amount: finalAmount
+              }]
           }
       }));
   };
@@ -612,6 +724,233 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       });
   };
 
+  // --- Communication Tasks ---
+
+  const addCommunicationTask = (task: Omit<CommunicationTask, 'id' | 'createdAt' | 'completed'>) => {
+      const newTask: CommunicationTask = {
+          ...task,
+          id: generateId(),
+          createdAt: new Date(),
+          completed: false
+      };
+      
+      setQuotation(prev => ({
+          ...prev,
+          communicationTasks: [...prev.communicationTasks, newTask]
+      }));
+  };
+
+  const updateCommunicationTask = (id: string, updates: Partial<CommunicationTask>) => {
+      setQuotation(prev => ({
+          ...prev,
+          communicationTasks: prev.communicationTasks.map(task =>
+              task.id === id ? { ...task, ...updates } : task
+          )
+      }));
+  };
+
+  const completeCommunicationTask = (id: string, notes?: string) => {
+      setQuotation(prev => {
+          const task = prev.communicationTasks.find(t => t.id === id);
+          if (!task) return prev;
+
+          // Lisää muistiinpano viestinnän osioon
+          if (notes) {
+              addMessage({
+                  author: 'Järjestelmä',
+                  text: `Tehtävä suoritettu: ${task.title}${notes ? '\n\nMuistiinpanot:\n' + notes : ''}`,
+                  type: 'internal'
+              });
+          }
+
+          return {
+              ...prev,
+              communicationTasks: prev.communicationTasks.map(t =>
+                  t.id === id 
+                      ? { ...t, completed: true, completedAt: new Date(), notes: notes || t.notes }
+                      : t
+              )
+          };
+      });
+  };
+
+  const removeCommunicationTask = (id: string) => {
+      setQuotation(prev => ({
+          ...prev,
+          communicationTasks: prev.communicationTasks.filter(t => t.id !== id)
+      }));
+  };
+
+  // --- Version Management ---
+
+  const createNewVersion = (name?: string, notes?: string) => {
+    setQuotation(prev => {
+      // Laske seuraava versionumero automaattisesti
+      const maxVersionNumber = prev.versions.length > 0 
+        ? Math.max(...prev.versions.map(v => v.versionNumber))
+        : 0;
+      const nextVersionNumber = maxVersionNumber + 1;
+
+      // Tallenna nykyinen versio jos se on olemassa
+      let updatedVersions = [...prev.versions];
+      
+      if (prev.currentVersionId) {
+        const existingVersion = updatedVersions.find(v => v.id === prev.currentVersionId);
+        if (existingVersion) {
+          // Päivitä olemassa oleva versio
+          updatedVersions = updatedVersions.map(v => 
+            v.id === prev.currentVersionId
+              ? {
+                  ...v,
+                  isActive: false,
+                  quotation: {
+                    ...prev,
+                    versions: [],
+                    currentVersionId: ''
+                  }
+                }
+              : v
+          );
+        } else {
+          // Tallenna nykyinen versio ensimmäistä kertaa
+          const currentVersion: QuotationVersion = {
+            id: prev.currentVersionId,
+            versionNumber: nextVersionNumber - 1,
+            name: `Versio ${nextVersionNumber - 1}`,
+            createdAt: prev.createdAt,
+            createdBy: 'Olli Hietanen',
+            status: prev.status,
+            sentAt: prev.sentAt,
+            isActive: false,
+            isSent: prev.status === 'sent' || prev.status === 'accepted',
+            notes: undefined,
+            quotation: {
+              ...prev,
+              versions: [],
+              currentVersionId: ''
+            }
+          };
+          updatedVersions.push(currentVersion);
+        }
+      } else if (updatedVersions.length === 0) {
+        // Jos ei ole versioita ollenkaan, luo ensimmäinen versio automaattisesti
+        const firstVersion: QuotationVersion = {
+          id: prev.currentVersionId || generateId(),
+          versionNumber: 1,
+          name: 'Versio 1',
+          createdAt: prev.createdAt,
+          createdBy: 'Olli Hietanen',
+          status: prev.status,
+          sentAt: prev.sentAt,
+          isActive: false,
+          isSent: prev.status === 'sent' || prev.status === 'accepted',
+          notes: undefined,
+          quotation: {
+            ...prev,
+            versions: [],
+            currentVersionId: ''
+          }
+        };
+        updatedVersions.push(firstVersion);
+      }
+
+      // Luodaan uusi versio nykyisestä tilasta
+      const newVersionId = generateId();
+      const versionName = name || `Versio ${nextVersionNumber}`;
+      
+      const newVersion: QuotationVersion = {
+        id: newVersionId,
+        versionNumber: nextVersionNumber,
+        name: versionName,
+        createdAt: new Date(),
+        createdBy: 'Olli Hietanen',
+        status: 'draft',
+        isActive: true,
+        isSent: false,
+        notes,
+        quotation: {
+          ...prev,
+          versions: [],
+          currentVersionId: '',
+          status: 'draft',
+          sentAt: undefined
+        }
+      };
+
+      updatedVersions.push(newVersion);
+
+      return {
+        ...prev,
+        versions: updatedVersions,
+        currentVersionId: newVersionId,
+        status: 'draft',
+        sentAt: undefined
+      };
+    });
+  };
+
+  const switchToVersion = (versionId: string) => {
+    setQuotation(prev => {
+      const version = prev.versions.find(v => v.id === versionId);
+      if (!version) return prev;
+
+      // Tallenna nykyinen versio jos se on muuttunut
+      const currentVersion = prev.versions.find(v => v.id === prev.currentVersionId);
+      if (currentVersion && prev.currentVersionId !== versionId) {
+        const updatedVersions = prev.versions.map(v => 
+          v.id === prev.currentVersionId 
+            ? { ...v, isActive: false, quotation: { ...prev, versions: [], currentVersionId: '' } }
+            : v
+        );
+        
+        return {
+          ...version.quotation,
+          versions: updatedVersions.map(v => 
+            v.id === versionId ? { ...v, isActive: true } : v
+          ),
+          currentVersionId: versionId
+        };
+      }
+
+      return {
+        ...version.quotation,
+        versions: prev.versions.map(v => 
+          v.id === versionId ? { ...v, isActive: true } : { ...v, isActive: false }
+        ),
+        currentVersionId: versionId
+      };
+    });
+  };
+
+  const sendVersion = (versionId: string) => {
+    setQuotation(prev => {
+      const version = prev.versions.find(v => v.id === versionId);
+      if (!version) return prev;
+
+      // Merkitse versio lähetetyksi
+      const updatedVersions = prev.versions.map(v => 
+        v.id === versionId 
+          ? { ...v, isSent: true, sentAt: new Date(), status: 'sent' as QuotationStatus }
+          : v
+      );
+
+      // Jos tämä on aktiivinen versio, päivitä myös pääobjekti
+      if (prev.currentVersionId === versionId) {
+        return {
+          ...prev,
+          versions: updatedVersions,
+          status: 'sent',
+          sentAt: new Date()
+        };
+      }
+
+      return {
+        ...prev,
+        versions: updatedVersions
+      };
+    });
+  };
+
   // --- Workflow Actions ---
 
   const workflow = {
@@ -643,22 +982,32 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           }));
       },
       markSent: () => {
-          setQuotation(prev => ({
-              ...prev,
-              status: 'sent',
-              sentAt: new Date()
-          }));
+          setQuotation(prev => {
+              // Paranna ohjetiedostoa kun tarjouslaskenta valmistuu
+              const improvedInstruction = improveAnalysisInstruction(prev);
+              return {
+                  ...prev,
+                  status: 'sent',
+                  sentAt: new Date(),
+                  aiAnalysisInstruction: improvedInstruction
+              };
+          });
       },
       markAccepted: () => {
-          setQuotation(prev => ({
-              ...prev,
-              status: 'accepted',
-              decisionAt: new Date(),
-              contract: {
-                  ...prev.contract,
-                  signDate: new Date() // Auto-set sign date
-              }
-          }));
+          setQuotation(prev => {
+              // Paranna ohjetiedostoa kun tarjouslaskenta hyväksytään
+              const improvedInstruction = improveAnalysisInstruction(prev);
+              return {
+                  ...prev,
+                  status: 'accepted',
+                  decisionAt: new Date(),
+                  contract: {
+                      ...prev.contract,
+                      signDate: new Date() // Auto-set sign date
+                  },
+                  aiAnalysisInstruction: improvedInstruction
+              };
+          });
       },
       markRejected: (reason?: string) => {
            setQuotation(prev => ({
@@ -717,7 +1066,14 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       addCostEntry,
       removeCostEntry,
       addMessage,
+      addCommunicationTask,
+      updateCommunicationTask,
+      completeCommunicationTask,
+      removeCommunicationTask,
       markInstructionsSent,
+      createNewVersion,
+      switchToVersion,
+      sendVersion,
       workflow
     }}>
       {children}

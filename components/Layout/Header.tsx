@@ -148,11 +148,16 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-white border-b border-stone-200 sticky top-0 z-50 shadow-sm px-6 py-3">
+    <header className="bg-white border-b border-slate-200 sticky top-0 z-50 card-shadow px-6 py-3">
       <div className="flex items-center justify-between gap-4">
         
         {/* Project Info */}
         <div className="flex items-center gap-6">
+          <img 
+            src="/images/Hietakulma_logo_cmyk_musta.png" 
+            alt="Hietakulma" 
+            className="h-10 w-auto"
+          />
           <div className="flex items-center gap-3">
               <div className="bg-hieta-sand w-1.5 h-10 rounded-full"></div>
               <div>

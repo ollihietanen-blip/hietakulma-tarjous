@@ -104,21 +104,21 @@ const CalendarView: React.FC = () => {
   return (
     <div className="flex flex-col h-screen bg-slate-50">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 p-6 flex justify-between items-center shadow-sm z-10">
+      <div className="bg-white border-b border-slate-200 p-6 flex justify-between items-center card-shadow z-10">
         <div>
             <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-                <CalendarIcon className="text-blue-600" /> Kalenteri
+                <CalendarIcon className="text-hieta-blue" /> Kalenteri
             </h1>
             <p className="text-slate-500 text-sm mt-1">Projektien aikataulut, tuotanto ja asennus.</p>
         </div>
-        <div className="flex items-center gap-4 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
-          <button onClick={handlePrevMonth} className="p-2 hover:bg-white hover:shadow-sm rounded-md transition-all text-slate-600">
+        <div className="flex items-center gap-4 bg-hieta-wood-light/30 p-1.5 rounded-lg border border-slate-200">
+          <button onClick={handlePrevMonth} className="p-2 hover:bg-white hover-lift rounded-md transition-all duration-200 text-slate-600 card-shadow">
             <ChevronLeft size={20} />
           </button>
           <span className="font-bold text-slate-900 w-32 text-center select-none">
             {monthNames[month]} {year}
           </span>
-          <button onClick={handleNextMonth} className="p-2 hover:bg-white hover:shadow-sm rounded-md transition-all text-slate-600">
+          <button onClick={handleNextMonth} className="p-2 hover:bg-white hover-lift rounded-md transition-all duration-200 text-slate-600 card-shadow">
             <ChevronRight size={20} />
           </button>
         </div>
@@ -126,14 +126,14 @@ const CalendarView: React.FC = () => {
 
       {/* Legend */}
       <div className="px-6 py-2 bg-white flex gap-6 text-xs font-bold border-b border-slate-100">
-          <div className="flex items-center gap-1.5"><Circle size={8} className="text-blue-500 fill-current" /> Tarjous jätetty</div>
+          <div className="flex items-center gap-1.5"><Circle size={8} className="text-hieta-blue fill-current" /> Tarjous jätetty</div>
           <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-orange-200 rounded-sm"></div> Tuotanto</div>
           <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-purple-200 rounded-sm"></div> Asennus</div>
       </div>
 
       {/* Calendar Container */}
       <div className="flex-1 p-6 overflow-y-auto">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex">
+        <div className="bg-white rounded-xl card-shadow-lg border border-slate-200 overflow-hidden h-full flex">
             
             {/* Left Column: Week Numbers */}
             <div className="w-12 border-r border-slate-200 bg-slate-50 flex flex-col">
@@ -176,8 +176,8 @@ const CalendarView: React.FC = () => {
                         const isToday = dayNum === today.getDate() && month === today.getMonth() && year === today.getFullYear();
                         
                         return (
-                            <div key={dayNum} className={`min-h-[120px] p-2 relative group hover:bg-slate-50 transition-colors ${isToday ? 'bg-blue-50/30' : ''}`}>
-                                <div className={`text-sm font-medium mb-2 w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white' : 'text-slate-700'}`}>
+                            <div key={dayNum} className={`min-h-[120px] p-2 relative group hover:bg-hieta-wood-light/30 transition-all duration-200 ${isToday ? 'bg-hieta-blue/10' : ''}`}>
+                                <div className={`text-sm font-medium mb-2 w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-hieta-blue text-white' : 'text-slate-700'}`}>
                                     {dayNum}
                                 </div>
                                 
@@ -193,7 +193,7 @@ const CalendarView: React.FC = () => {
                                             <div key={idx} className="text-xs mb-1">
                                                 {isOfferDay && (
                                                     <div className="flex items-center gap-1 text-slate-600 mb-1">
-                                                        <Circle size={6} className="text-blue-500 fill-current" />
+                                                        <Circle size={6} className="text-hieta-blue fill-current" />
                                                         <span className="truncate font-medium">{proj.title}</span>
                                                     </div>
                                                 )}

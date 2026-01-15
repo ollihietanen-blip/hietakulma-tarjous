@@ -1,12 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
-import { CostEntry } from '../../types';
-import { Plus, Trash2, TrendingUp, AlertTriangle, CheckCircle, Calculator, PieChart, List, BarChart3, Box, Grid } from 'lucide-react';
+import { CostEntry, CostEntryCategory } from '../../types';
+import { Plus, Trash2, TrendingUp, AlertTriangle, CheckCircle, Calculator, PieChart, List, BarChart3, Box, Grid, Upload, FileText, X, Loader } from 'lucide-react';
 import Header from '../Layout/Header';
+
+interface InvoiceAnalysis {
+  supplier?: string;
+  date?: Date;
+  totalAmount: number;
+  category: CostEntryCategory;
+  description: string;
+  items?: Array<{
+    description: string;
+    amount: number;
+    category?: CostEntryCategory;
+  }>;
+}
 
 const CostTrackingView: React.FC = () => {
   const { quotation, pricing, addCostEntry, removeCostEntry } = useQuotation();
   const [comparisonView, setComparisonView] = useState<'summary' | 'items'>('summary');
+  const [showInvoiceUpload, setShowInvoiceUpload] = useState(false);
+  const [uploadedInvoice, setUploadedInvoice] = useState<File | null>(null);
+  const [isAnalyzingInvoice, setIsAnalyzingInvoice] = useState(false);
+  const [invoiceAnalysis, setInvoiceAnalysis] = useState<InvoiceAnalysis | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // New Entry State
   const [newEntry, setNewEntry] = useState<Partial<CostEntry>>({
@@ -14,14 +33,27 @@ const CostTrackingView: React.FC = () => {
       category: 'elements',
       description: '',
       amount: 0,
-      supplier: ''
+      supplier: '',
+      costType: 'material', // Oletuksena materiaalikustannus
+      laborHours: undefined,
+      laborRate: undefined // TODO: Haetaan tietokannasta myöhemmin
   });
 
-  // Calculate Realized Totals
+  // Calculate Realized Totals - erotellaan työ- ja materiaalikustannukset
   const entries = quotation.postCalculation.entries;
-  const realizedTotal = entries.reduce((sum, e) => sum + e.amount, 0);
+  const materialEntries = entries.filter(e => e.costType === 'material');
+  const laborEntries = entries.filter(e => e.costType === 'labor');
+  
+  const realizedMaterialCost = materialEntries.reduce((sum, e) => sum + e.amount, 0);
+  const realizedLaborCost = laborEntries.reduce((sum, e) => sum + e.amount, 0);
+  const realizedTotal = realizedMaterialCost + realizedLaborCost;
+  
   const salesPrice = pricing.sellingPriceExVat; // Budget Sales Price (Ex VAT)
-  const budgetedCost = pricing.materialCostTotal; // Budget Cost
+  const budgetedMaterialCost = pricing.materialCostTotal; // Budget Material Cost
+  // TODO: Työkustannukset haetaan tietokannasta myöhemmin
+  const budgetedLaborCost = 0; // Placeholder - haetaan tietokannasta
+  
+  const budgetedCost = budgetedMaterialCost + budgetedLaborCost;
   
   const realizedProfit = salesPrice - realizedTotal;
   const realizedMarginPercent = salesPrice > 0 ? (realizedProfit / salesPrice) * 100 : 0;
@@ -81,26 +113,168 @@ const CostTrackingView: React.FC = () => {
   const budgetItems = getBudgetItems();
 
   const handleAdd = () => {
-      if (!newEntry.amount || !newEntry.description) return;
+      if (!newEntry.description) return;
+      if (newEntry.costType === 'labor' && (!newEntry.laborHours || !newEntry.laborRate)) return;
+      if (newEntry.costType === 'material' && !newEntry.amount) return;
       
       addCostEntry({
           date: newEntry.date || new Date(),
           category: newEntry.category as any,
           description: newEntry.description || '',
-          amount: Number(newEntry.amount),
-          supplier: newEntry.supplier
+          amount: Number(newEntry.amount) || 0,
+          supplier: newEntry.supplier,
+          costType: newEntry.costType || 'material',
+          laborHours: newEntry.laborHours,
+          laborRate: newEntry.laborRate
       });
       
       // Reset form
       setNewEntry({
-          ...newEntry,
+          date: new Date(),
+          category: 'elements',
           description: '',
           amount: 0,
-          supplier: ''
+          supplier: '',
+          costType: 'material',
+          laborHours: undefined,
+          laborRate: undefined
       });
   };
 
   const inputClass = "w-full bg-white border border-slate-300 text-slate-900 rounded-lg shadow-sm text-sm py-2 px-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none";
+
+  // Analyze invoice with AI
+  const analyzeInvoice = async (file: File) => {
+    setIsAnalyzingInvoice(true);
+    setInvoiceAnalysis(null);
+
+    try {
+      const apiKey = process.env.GEMINI_API_KEY || '';
+      if (!apiKey) {
+        throw new Error('GEMINI_API_KEY ei ole määritelty. Tarkista .env.local tiedosto.');
+      }
+
+      // Convert image to base64
+      let imageData: string;
+      if (file.type.startsWith('image/')) {
+        imageData = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      } else {
+        throw new Error('PDF-tiedostot eivät ole vielä tuettuja. Käytä kuvatiedostoa.');
+      }
+
+      // Prepare prompt for Gemini
+      const prompt = `Analysoi tämä lasku ja palauta JSON-muodossa seuraavat tiedot:
+{
+  "supplier": "Toimittajan nimi",
+  "date": "YYYY-MM-DD",
+  "totalAmount": kokonaissumma numeroina (ilman €-merkkiä, ALV 0%),
+  "category": "Yksi seuraavista: elements, trusses, products, installation, logistics, design, other",
+  "description": "Lyhyt kuvaus laskun sisällöstä",
+  "items": [
+    {
+      "description": "Tuotteen/työn kuvaus",
+      "amount": summa numeroina,
+      "category": "vapaaehtoinen kategoria"
+    }
+  ]
+}
+
+Kategorisoi lasku seuraavasti:
+- elements: Puuelementit, seinät, lattiat (tehdastuotanto)
+- trusses: Ristikot
+- products: Ikkunat, ovet, materiaalit
+- installation: Asennustyöt, työvoima
+- logistics: Kuljetus, logistiikka
+- design: Suunnittelu, piirustukset
+- other: Muut kulut
+
+Palauta VAIN JSON-objekti, ei muuta tekstiä.`;
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  { text: prompt },
+                  {
+                    inline_data: {
+                      mime_type: file.type,
+                      data: imageData
+                    }
+                  }
+                ]
+              }
+            ]
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`API-virhe: ${response.status} - ${errorData}`);
+      }
+
+      const data = await response.json();
+      const text = data.candidates[0].content.parts[0].text;
+      
+      // Extract JSON from response (might be wrapped in markdown code blocks)
+      let jsonText = text.trim();
+      if (jsonText.startsWith('```')) {
+        jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      }
+      
+      const analysis: InvoiceAnalysis = JSON.parse(jsonText);
+      
+      // Parse date if provided
+      if (analysis.date && typeof analysis.date === 'string') {
+        analysis.date = new Date(analysis.date);
+      } else {
+        analysis.date = new Date(); // Default to today
+      }
+
+      setInvoiceAnalysis(analysis);
+    } catch (error) {
+      console.error('Laskun analysointi epäonnistui:', error);
+      alert(`Laskun analysointi epäonnistui: ${error instanceof Error ? error.message : 'Tuntematon virhe'}`);
+    } finally {
+      setIsAnalyzingInvoice(false);
+    }
+  };
+
+  // Confirm and add invoice as cost entry
+  const confirmInvoiceEntry = () => {
+    if (!invoiceAnalysis) return;
+
+    addCostEntry({
+      date: invoiceAnalysis.date || new Date(),
+      category: invoiceAnalysis.category,
+      description: invoiceAnalysis.description,
+      amount: invoiceAnalysis.totalAmount,
+      supplier: invoiceAnalysis.supplier,
+      costType: 'material' // Laskut ovat yleensä materiaalikustannuksia
+    });
+
+    // Reset
+    setUploadedInvoice(null);
+    setInvoiceAnalysis(null);
+    setShowConfirmModal(false);
+    setShowInvoiceUpload(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-slate-50 relative">
@@ -141,7 +315,13 @@ const CostTrackingView: React.FC = () => {
                         <div className={`text-3xl font-bold ${realizedTotal > budgetedCost ? 'text-red-600' : 'text-slate-900'}`}>
                             {realizedTotal.toLocaleString('fi-FI', {maximumFractionDigits:0})} €
                         </div>
-                        <div className="text-sm text-slate-400 font-medium">Budjetti: {budgetedCost.toLocaleString('fi-FI', {maximumFractionDigits:0})} €</div>
+                        <div className="text-sm text-slate-400 font-medium">
+                            Budjetti: {budgetedCost.toLocaleString('fi-FI', {maximumFractionDigits:0})} €
+                            <div className="text-xs mt-1">
+                                Materiaali: {realizedMaterialCost.toLocaleString('fi-FI', {maximumFractionDigits:0})} € / 
+                                Työ: {realizedLaborCost.toLocaleString('fi-FI', {maximumFractionDigits:0})} €
+                            </div>
+                        </div>
                     </div>
                     <div className="absolute right-0 bottom-0 p-4 opacity-10">
                         <TrendingUp size={64} />
@@ -182,6 +362,17 @@ const CostTrackingView: React.FC = () => {
                                 />
                             </div>
                             <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Kustannustyyppi</label>
+                                <select 
+                                    className={inputClass}
+                                    value={newEntry.costType || 'material'}
+                                    onChange={(e) => setNewEntry({ ...newEntry, costType: e.target.value as 'material' | 'labor' })}
+                                >
+                                    <option value="material">Materiaalikustannus</option>
+                                    <option value="labor">Työkustannus</option>
+                                </select>
+                            </div>
+                            <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Kategoria</label>
                                 <select 
                                     className={inputClass}
@@ -208,27 +399,79 @@ const CostTrackingView: React.FC = () => {
                                 onChange={(e) => setNewEntry({ ...newEntry, description: e.target.value })}
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Toimittaja (Valinnainen)</label>
-                                <input 
-                                    type="text" 
-                                    className={inputClass}
-                                    value={newEntry.supplier || ''}
-                                    onChange={(e) => setNewEntry({ ...newEntry, supplier: e.target.value })}
-                                />
+                        {newEntry.costType === 'labor' ? (
+                            <div className="grid grid-cols-3 gap-4 mb-6">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Työtunnit</label>
+                                    <input 
+                                        type="number" 
+                                        step="0.5"
+                                        className={inputClass}
+                                        placeholder="0.0"
+                                        value={newEntry.laborHours || ''}
+                                        onChange={(e) => {
+                                            const hours = Number(e.target.value);
+                                            const rate = newEntry.laborRate || 0;
+                                            setNewEntry({ 
+                                                ...newEntry, 
+                                                laborHours: hours,
+                                                amount: hours * rate
+                                            });
+                                        }}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tuntihinta (€)</label>
+                                    <input 
+                                        type="number" 
+                                        className={inputClass}
+                                        placeholder="0.00"
+                                        value={newEntry.laborRate || ''}
+                                        onChange={(e) => {
+                                            const rate = Number(e.target.value);
+                                            const hours = newEntry.laborHours || 0;
+                                            setNewEntry({ 
+                                                ...newEntry, 
+                                                laborRate: rate,
+                                                amount: hours * rate
+                                            });
+                                        }}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Summa (€ alv 0%)</label>
+                                    <input 
+                                        type="number" 
+                                        className={`${inputClass} font-bold text-right`} 
+                                        placeholder="0.00"
+                                        value={newEntry.amount || ''}
+                                        readOnly
+                                    />
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Summa (€ alv 0%)</label>
-                                <input 
-                                    type="number" 
-                                    className={`${inputClass} font-bold text-right`} 
-                                    placeholder="0.00"
-                                    value={newEntry.amount || ''}
-                                    onChange={(e) => setNewEntry({ ...newEntry, amount: Number(e.target.value) })}
-                                />
+                        ) : (
+                            <div className="grid grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Toimittaja (Valinnainen)</label>
+                                    <input 
+                                        type="text" 
+                                        className={inputClass}
+                                        value={newEntry.supplier || ''}
+                                        onChange={(e) => setNewEntry({ ...newEntry, supplier: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Summa (€ alv 0%)</label>
+                                    <input 
+                                        type="number" 
+                                        className={`${inputClass} font-bold text-right`} 
+                                        placeholder="0.00"
+                                        value={newEntry.amount || ''}
+                                        onChange={(e) => setNewEntry({ ...newEntry, amount: Number(e.target.value) })}
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        )}
                         <button 
                             onClick={handleAdd}
                             className="w-full bg-slate-900 text-white font-bold py-2.5 rounded-lg hover:bg-black transition-colors flex items-center justify-center gap-2"
@@ -379,6 +622,104 @@ const CostTrackingView: React.FC = () => {
             </div>
         </div>
       </main>
+
+      {/* Confirm Invoice Modal */}
+      {showConfirmModal && invoiceAnalysis && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowConfirmModal(false)}>
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-slate-900">Vahvista kulu</h3>
+              <button onClick={() => setShowConfirmModal(false)} className="p-1 hover:bg-slate-100 rounded">
+                <X size={20} className="text-slate-500" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                  Kategoria
+                </label>
+                <select
+                  value={invoiceAnalysis.category}
+                  onChange={(e) => setInvoiceAnalysis({ ...invoiceAnalysis, category: e.target.value as CostEntryCategory })}
+                  className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-lg shadow-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none"
+                >
+                  <option value="elements">Elementit (Tehdas)</option>
+                  <option value="trusses">Ristikot</option>
+                  <option value="products">Ikkunat/Ovet/Materiaali</option>
+                  <option value="installation">Asennus</option>
+                  <option value="logistics">Logistiikka</option>
+                  <option value="design">Suunnittelu</option>
+                  <option value="other">Muu / Yllättävä</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                  Kuvaus
+                </label>
+                <input
+                  type="text"
+                  value={invoiceAnalysis.description}
+                  onChange={(e) => setInvoiceAnalysis({ ...invoiceAnalysis, description: e.target.value })}
+                  className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-lg shadow-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                  Toimittaja
+                </label>
+                <input
+                  type="text"
+                  value={invoiceAnalysis.supplier || ''}
+                  onChange={(e) => setInvoiceAnalysis({ ...invoiceAnalysis, supplier: e.target.value })}
+                  className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-lg shadow-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                  Summa (€ alv 0%)
+                </label>
+                <input
+                  type="number"
+                  value={invoiceAnalysis.totalAmount}
+                  onChange={(e) => setInvoiceAnalysis({ ...invoiceAnalysis, totalAmount: Number(e.target.value) })}
+                  className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-lg shadow-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                  Päivämäärä
+                </label>
+                <input
+                  type="date"
+                  value={invoiceAnalysis.date ? new Date(invoiceAnalysis.date).toISOString().split('T')[0] : ''}
+                  onChange={(e) => setInvoiceAnalysis({ ...invoiceAnalysis, date: e.target.valueAsDate || new Date() })}
+                  className="w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-lg shadow-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={confirmInvoiceEntry}
+                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition-all"
+                >
+                  Vahvista ja lisää
+                </button>
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  className="px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-lg transition-all"
+                >
+                  Peruuta
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

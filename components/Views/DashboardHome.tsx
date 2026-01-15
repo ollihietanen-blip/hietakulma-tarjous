@@ -67,19 +67,21 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNewQuote, userRole = 's
       {/* Header */}
       <div className="flex justify-between items-end">
         <div>
-            <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-3xl font-display font-bold text-slate-900">Hei, Olli</h1>
-                <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${userRole === 'manager' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {userRole === 'manager' ? 'Myyntipäällikkö' : 'Myyntiedustaja'}
-                </span>
+            <div className="mb-3">
+                <div className="flex items-center gap-2 mb-1">
+                    <h1 className="text-3xl font-display font-bold text-slate-900">Hei, Olli</h1>
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${userRole === 'manager' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {userRole === 'manager' ? 'Myyntipäällikkö' : 'Myyntiedustaja'}
+                    </span>
+                </div>
+                <p className="text-slate-500">
+                    {userRole === 'sales' ? 'Tässä on katsaus omiin tavoitteisiisi.' : 'Tässä on katsaus koko tiimin tilanteeseen.'}
+                </p>
             </div>
-            <p className="text-slate-500">
-                {userRole === 'sales' ? 'Tässä on katsaus omiin tavoitteisiisi.' : 'Tässä on katsaus koko tiimin tilanteeseen.'}
-            </p>
         </div>
         <button 
             onClick={onNewQuote}
-            className="bg-hieta-black text-white px-5 py-3 rounded-md font-bold text-sm shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all flex items-center gap-2"
+            className="bg-hieta-black text-white px-6 py-3 rounded-lg font-bold text-sm card-shadow-lg hover:bg-slate-800 hover-lift transition-all duration-200 flex items-center gap-2"
         >
             <Plus size={18} /> Uusi tarjouslaskelma
         </button>
@@ -88,15 +90,15 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNewQuote, userRole = 's
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {stats.map((stat, i) => (
-            <div key={i} className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm flex items-start justify-between group hover:border-blue-200 transition-colors">
+            <div key={i} className="bg-white p-6 rounded-xl border border-slate-100 card-shadow hover-lift flex items-start justify-between group hover:border-hieta-wood-accent transition-all duration-200">
                 <div>
-                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{stat.label}</div>
+                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{stat.label}</div>
                     <div className="text-3xl font-display font-bold text-slate-900 flex items-baseline gap-1">
                         {stat.value}
-                        <span className="text-sm font-sans font-medium text-slate-400">{stat.unit}</span>
+                        <span className="text-sm font-sans font-medium text-slate-500">{stat.unit}</span>
                     </div>
                 </div>
-                <div className={`px-2 py-1 rounded text-xs font-bold flex items-center gap-1 ${stat.bg} ${stat.color}`}>
+                <div className={`px-2.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1 ${stat.bg} ${stat.color}`}>
                     <ArrowUpRight size={12} /> {stat.change}
                 </div>
             </div>
@@ -106,18 +108,18 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNewQuote, userRole = 's
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Main List (Quotes) */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-fit">
-             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 card-shadow-lg overflow-hidden h-fit">
+             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-hieta-wood-light/30">
                  <h2 className="font-display font-bold text-lg text-slate-800">
                     {userRole === 'manager' ? 'Kaikki viimeisimmät tarjoukset' : 'Omat viimeisimmät tarjoukset'}
                  </h2>
-                 <button className="text-xs font-bold text-blue-600 hover:text-blue-800 uppercase">Näytä kaikki</button>
+                 <button className="text-xs font-bold text-hieta-blue hover:text-hieta-blue/80 uppercase transition-colors">Näytä kaikki</button>
              </div>
              <div className="divide-y divide-slate-50">
                 {/* Active draft */}
-                <div className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between cursor-pointer border-l-4 border-blue-500 bg-blue-50/10" onClick={onNewQuote}>
+                <div className="p-4 hover:bg-hieta-wood-light/50 transition-all duration-200 hover-lift flex items-center justify-between cursor-pointer border-l-4 border-hieta-blue bg-blue-50/20" onClick={onNewQuote}>
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-blue-100 text-blue-600 rounded-lg">
+                        <div className="p-3 bg-hieta-blue/10 text-hieta-blue rounded-lg">
                             <FileText size={20} />
                         </div>
                         <div>
@@ -132,7 +134,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNewQuote, userRole = 's
                 </div>
 
                 {visibleQuotes.map(quote => (
-                    <div key={quote.id} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between cursor-pointer">
+                    <div key={quote.id} className="p-4 hover:bg-hieta-wood-light/30 transition-all duration-200 hover-lift flex items-center justify-between cursor-pointer">
                         <div className="flex items-center gap-4">
                             <div className={`p-3 rounded-lg ${quote.needsApproval ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'}`}>
                                 {quote.needsApproval ? <ShieldAlert size={20} /> : <FileText size={20} />}
@@ -149,9 +151,9 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNewQuote, userRole = 's
                             <div className="font-bold text-slate-900">{quote.price}</div>
                             {/* Added delivery Info */}
                             <div className="flex flex-col items-end mt-1 gap-1">
-                                <span className={`text-xs font-bold px-2 py-0.5 rounded
-                                    ${quote.status === 'Hyväksytty' ? 'text-green-600 bg-green-50' : 
-                                    quote.needsApproval ? 'text-amber-700 bg-amber-50' : 'text-slate-500 bg-slate-100'}`}>
+                                <span className={`text-xs font-bold px-2.5 py-1 rounded-md
+                                    ${quote.status === 'Hyväksytty' ? 'text-green-700 bg-green-50 border border-green-100' : 
+                                    quote.needsApproval ? 'text-amber-700 bg-amber-50 border border-amber-100' : 'text-slate-600 bg-slate-50 border border-slate-200'}`}>
                                     {quote.status}
                                 </span>
                                 {quote.delivery && (

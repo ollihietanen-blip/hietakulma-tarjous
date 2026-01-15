@@ -55,7 +55,7 @@ const PipelineView: React.FC = () => {
             <div className="bg-white border-b border-slate-200 p-6 flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-                        <KanbanSquare className="text-blue-600" /> Myyntiputki
+                        <KanbanSquare className="text-hieta-blue" /> Myyntiputki
                     </h1>
                     <div className="flex gap-6 mt-2 text-sm text-slate-500">
                         <div className="flex items-center gap-1.5">
@@ -64,11 +64,11 @@ const PipelineView: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-1.5">
                             <TrendingUp size={14} className="text-blue-500" />
-                            Ennuste: <span className="font-bold text-blue-700">{weightedForecast.toLocaleString('fi-FI', {maximumFractionDigits: 0})} €</span>
+                            Ennuste: <span className="font-bold text-hieta-blue">{weightedForecast.toLocaleString('fi-FI', {maximumFractionDigits: 0})} €</span>
                         </div>
                     </div>
                 </div>
-                <button className="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-black transition-colors">
+                <button className="bg-hieta-black text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-slate-800 transition-all duration-200 card-shadow hover-lift">
                     <Plus size={16} /> Uusi Liidi
                 </button>
             </div>
@@ -96,7 +96,7 @@ const PipelineView: React.FC = () => {
                                 {/* Drop Zone / List */}
                                 <div className="flex-1 bg-slate-100/50 rounded-b-xl border-x border-b border-slate-200 p-3 space-y-3 overflow-y-auto">
                                     {stageDeals.map(deal => (
-                                        <div key={deal.id} className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 group hover:shadow-md transition-all hover:border-blue-300 relative">
+                                        <div key={deal.id} className="bg-white p-4 rounded-lg card-shadow border border-slate-200 group hover:shadow-md transition-all duration-200 hover:border-hieta-blue hover-lift relative">
                                             
                                             {/* Tags */}
                                             <div className="flex gap-2 mb-2">

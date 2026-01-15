@@ -33,13 +33,13 @@ const MessagesTab: React.FC = () => {
         <div className="flex justify-between items-start mb-8">
             <div>
                 <h1 className="text-2xl font-bold text-slate-900 mb-2 flex items-center gap-2">
-                    <MessageSquare className="text-blue-600" /> Viestit
+                    <MessageSquare className="text-hieta-blue" /> Viestit
                 </h1>
                 <p className="text-slate-500">Keskustele asiakkaan kanssa ja lisää sisäisiä muistiinpanoja.</p>
             </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[70vh]">
+        <div className="bg-white rounded-xl card-shadow border border-slate-200 flex flex-col h-[70vh]">
             {/* Message Display Area */}
             <div className="flex-1 p-6 space-y-6 overflow-y-auto">
                 {quotation.messages.sort((a,b) => a.timestamp.getTime() - b.timestamp.getTime()).map(msg => {
@@ -76,7 +76,7 @@ const MessagesTab: React.FC = () => {
                                     <User size={16} />
                                 </div>
                             )}
-                            <div className={`p-4 rounded-2xl max-w-lg ${isMine ? 'bg-blue-600 text-white rounded-br-lg' : 'bg-slate-100 text-slate-800 rounded-bl-lg'}`}>
+                            <div className={`p-4 rounded-2xl max-w-lg ${isMine ? 'bg-hieta-blue text-white rounded-br-lg' : 'bg-slate-100 text-slate-800 rounded-bl-lg'}`}>
                                 <div className="flex items-baseline gap-2 mb-1">
                                     <span className="font-bold text-sm">{isMine ? 'Sinä' : msg.author}</span>
                                     <span className={`text-xs ${isMine ? 'text-blue-200' : 'text-slate-400'}`}>

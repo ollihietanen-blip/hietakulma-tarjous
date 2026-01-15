@@ -63,7 +63,7 @@ const ProjectsListView: React.FC<ProjectsListViewProps> = ({ onOpenProject }) =>
         <div className="px-8 py-6 bg-white border-b border-slate-200 flex justify-between items-center">
             <div>
                 <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-                    <Folder className="text-blue-600" /> Projektit
+                    <Folder className="text-hieta-blue" /> Projektit
                 </h1>
                 <p className="text-slate-500 mt-1 text-sm">Selaa ja hallitse kaikkia projekteja.</p>
             </div>
@@ -73,7 +73,7 @@ const ProjectsListView: React.FC<ProjectsListViewProps> = ({ onOpenProject }) =>
                     <input 
                         type="text" 
                         placeholder="Hae projektia tai asiakasta..." 
-                        className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        className="pl-10 pr-4 py-2 bg-hieta-wood-light/50 border border-slate-200 rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-hieta-blue/20 focus:border-hieta-blue card-shadow"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                     />
@@ -88,7 +88,7 @@ const ProjectsListView: React.FC<ProjectsListViewProps> = ({ onOpenProject }) =>
 
         {/* List */}
         <div className="flex-1 overflow-y-auto p-8">
-            <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="max-w-7xl mx-auto bg-white rounded-xl card-shadow-lg border border-slate-200 overflow-hidden">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -113,10 +113,10 @@ const ProjectsListView: React.FC<ProjectsListViewProps> = ({ onOpenProject }) =>
                             >
                                 <td className="px-6 py-4">
                                     <div className="font-bold text-slate-900 flex items-center gap-2">
-                                        <FileText size={16} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
+                                        <FileText size={16} className="text-slate-400 group-hover:text-hieta-blue transition-colors" />
                                         {project.name}
                                     </div>
-                                    {project.id === 'curr' && <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1.5 py-0.5 rounded ml-6">NYKYINEN ISTUNTO</span>}
+                                    {project.id === 'curr' && <span className="text-[10px] text-hieta-blue font-bold bg-hieta-blue/10 px-2 py-0.5 rounded-md border border-hieta-blue/20 ml-6">NYKYINEN ISTUNTO</span>}
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="text-sm text-slate-600 flex items-center gap-2">

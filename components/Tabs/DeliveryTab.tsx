@@ -18,7 +18,7 @@ const DeliveryTab: React.FC = () => {
   const destination = encodeURIComponent(quotation.project.address || '');
   const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}`;
 
-  const inputClass = "w-full bg-white border border-slate-300 text-slate-900 rounded-lg shadow-sm font-medium hover:border-blue-400 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 text-sm py-2 px-3 transition-all duration-200 outline-none";
+  const inputClass = "w-full bg-white border border-slate-300 text-slate-900 rounded-lg card-shadow font-medium hover:border-hieta-wood-accent focus:bg-white focus:border-hieta-blue focus:ring-2 focus:ring-hieta-blue/20 text-sm py-2 px-3 transition-all duration-200 outline-none";
   const labelClass = "block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-0.5";
 
   return (
@@ -33,17 +33,17 @@ const DeliveryTab: React.FC = () => {
         {/* Left Column */}
         <div className="space-y-8">
             {/* Transportation Calculator */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-6 py-4 bg-blue-50/50 border-b border-slate-200 flex items-center justify-between">
+            <div className="bg-white rounded-xl card-shadow border border-slate-200 overflow-hidden hover-lift">
+                <div className="px-6 py-4 bg-hieta-blue/5 border-b border-slate-200 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <MapPin className="text-blue-600" size={20} />
+                        <MapPin className="text-hieta-blue" size={20} />
                         <h2 className="text-lg font-bold text-slate-900">Kuljetuskustannukset</h2>
                     </div>
                     <a 
                         href={mapsUrl} 
                         target="_blank" 
                         rel="noreferrer"
-                        className="flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 bg-white border border-blue-200 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors"
+                        className="flex items-center gap-1 text-xs font-bold text-hieta-blue hover:text-hieta-blue/80 bg-white border border-hieta-blue/20 hover:bg-hieta-blue/10 px-3 py-1.5 rounded-lg transition-all duration-200 hover-lift"
                     >
                         <ExternalLink size={14} /> Hae kilometrit
                     </a>

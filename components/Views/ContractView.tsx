@@ -136,7 +136,7 @@ const ContractView: React.FC = () => {
             <div className="flex justify-between items-end mb-8">
                 <div>
                     <h1 className="text-3xl font-display font-bold text-slate-900 flex items-center gap-3">
-                        <FileSignature className="text-blue-600" /> Sopimuksen Hallinta
+                        <FileSignature className="text-hieta-blue" /> Sopimuksen Hallinta
                     </h1>
                     <p className="text-slate-500 mt-2 max-w-2xl">
                         Järjestä, muokkaa ja valitse sähköiseen allekirjoitukseen lähetettävät dokumentit.
@@ -147,7 +147,7 @@ const ContractView: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* Left Column: Status & Actions */}
                 <div className="md:col-span-1 space-y-6">
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <div className="bg-white rounded-xl card-shadow border border-slate-200 p-6 hover-lift">
                         <h2 className="text-lg font-bold text-slate-900 mb-4">Sopimuksen tila</h2>
                         <div className={`flex items-center gap-3 p-4 rounded-lg ${statusInfo.color}`}>
                             {statusInfo.icon}
@@ -158,7 +158,7 @@ const ContractView: React.FC = () => {
                         </div>
                     </div>
                      {!isContractSigned && (
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                        <div className="bg-white rounded-xl card-shadow border border-slate-200 p-6 hover-lift">
                             <h2 className="text-lg font-bold text-slate-900 mb-4">Toiminnot</h2>
                              {quotation.status === 'sent' ? (
                                 <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-xs text-yellow-800 flex items-start gap-2">
@@ -169,7 +169,7 @@ const ContractView: React.FC = () => {
                                 <button
                                     disabled={includedCount === 0 || isDisabled}
                                     onClick={() => alert('Lähetetään sähköiseen allekirjoitukseen... (toiminnallisuus ei toteutettu)')}
-                                    className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-700 shadow-sm disabled:bg-slate-300 disabled:cursor-not-allowed transition-all"
+                                    className="w-full bg-hieta-black text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 hover:bg-slate-800 card-shadow hover-lift disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-200"
                                 >
                                     <Send size={18} /> Lähetä allekirjoitettavaksi ({includedCount})
                                 </button>
@@ -185,13 +185,13 @@ const ContractView: React.FC = () => {
                 >
                      {isDraggingOver && !isDisabled && (
                         <div 
-                            className="absolute inset-0 bg-blue-500/10 border-4 border-dashed border-blue-500 rounded-xl z-20 flex flex-col items-center justify-center"
+                            className="absolute inset-0 bg-hieta-blue/10 border-4 border-dashed border-hieta-blue rounded-xl z-20 flex flex-col items-center justify-center"
                             onDragLeave={handleDragLeave}
                             onDragOver={handleDragOver}
                             onDrop={handleDrop}
                         >
-                            <UploadCloud size={48} className="text-blue-500" />
-                            <p className="font-bold text-blue-700 mt-2">Pudota tiedostot tähän</p>
+                            <UploadCloud size={48} className="text-hieta-blue" />
+                            <p className="font-bold text-hieta-blue mt-2">Pudota tiedostot tähän</p>
                         </div>
                     )}
                     <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
@@ -212,7 +212,7 @@ const ContractView: React.FC = () => {
                             >
                                 {!isDisabled && <GripVertical className="text-slate-300 group-hover:text-slate-500 flex-shrink-0" />}
                                 
-                                <div onClick={() => !isDisabled && handleUpdateDoc(doc.id, 'included', !doc.included)} className={`flex-shrink-0 cursor-pointer ${doc.included ? 'text-blue-600' : 'text-slate-400'}`}>
+                                <div onClick={() => !isDisabled && handleUpdateDoc(doc.id, 'included', !doc.included)} className={`flex-shrink-0 cursor-pointer ${doc.included ? 'text-hieta-blue' : 'text-slate-400'}`}>
                                     {doc.included ? <CheckSquare size={24} /> : <Square size={24} />}
                                 </div>
                                 
@@ -226,14 +226,14 @@ const ContractView: React.FC = () => {
                                         value={doc.name}
                                         onChange={(e) => handleUpdateDoc(doc.id, 'name', e.target.value)}
                                         disabled={isDisabled}
-                                        className={`font-medium w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 rounded px-1 py-0.5 ${doc.included ? 'text-slate-800' : 'text-slate-400 line-through'}`}
+                                        className={`font-medium w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-hieta-blue/30 rounded px-1 py-0.5 ${doc.included ? 'text-slate-800' : 'text-slate-400 line-through'}`}
                                     />
                                     <input
                                         type="text"
                                         value={doc.category}
                                         onChange={(e) => handleUpdateDoc(doc.id, 'category', e.target.value)}
                                         disabled={isDisabled}
-                                        className={`text-xs w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 rounded px-1 py-0.5 ${doc.included ? 'text-slate-500' : 'text-slate-400'}`}
+                                        className={`text-xs w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-hieta-blue/30 rounded px-1 py-0.5 ${doc.included ? 'text-slate-500' : 'text-slate-400'}`}
                                     />
                                 </div>
                                 {!isDisabled && (
@@ -247,7 +247,7 @@ const ContractView: React.FC = () => {
 
                     {!isDisabled && (
                         <div className="mt-6 border-t border-slate-200 pt-4">
-                            <button onClick={handleAddDoc} className="w-full flex items-center justify-center gap-2 text-sm text-blue-700 font-bold bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg py-2.5 transition-colors">
+                            <button onClick={handleAddDoc} className="w-full flex items-center justify-center gap-2 text-sm text-hieta-blue font-bold bg-hieta-blue/10 hover:bg-hieta-blue/20 border border-hieta-blue/20 rounded-lg py-2.5 transition-all duration-200 hover-lift">
                                 <PlusCircle size={16} /> Lisää tyhjä dokumenttirivi
                             </button>
                         </div>

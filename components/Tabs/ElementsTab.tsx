@@ -78,14 +78,14 @@ const ElementsTab: React.FC = () => {
         onSelectTemplate={handleAddFromTemplate}
       />
       {/* Left Column: List of Elements */}
-      <div className="w-1/3 max-w-sm flex flex-col bg-white rounded-l-xl border border-slate-200 shadow-sm">
+      <div className="w-1/3 max-w-sm flex flex-col bg-white rounded-l-xl border border-slate-200 card-shadow">
         <div className="p-4 border-b border-slate-200">
             <div className="relative">
                 <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
                 <input 
                     type="text"
                     placeholder="Etsi elementtejä..."
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-2 bg-hieta-wood-light/50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-hieta-blue/50 focus:border-hieta-blue card-shadow"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -107,15 +107,15 @@ const ElementsTab: React.FC = () => {
                                 <div
                                     key={item.id}
                                     onClick={() => setSelectedItemId(item.id)}
-                                    className={`p-4 border-b border-slate-100 cursor-pointer group hover:bg-slate-50 transition-colors ${selectedItemId === item.id ? 'bg-blue-50' : ''}`}
+                                    className={`p-4 border-b border-slate-100 cursor-pointer group hover:bg-hieta-wood-light/30 transition-all duration-200 hover-lift ${selectedItemId === item.id ? 'bg-hieta-blue/10' : ''}`}
                                 >
                                     <div className="flex justify-between items-start">
                                        <div className="flex gap-3">
-                                          <div className={`mt-1 flex-shrink-0 p-2 rounded-lg ${selectedItemId === item.id ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>
+                                          <div className={`mt-1 flex-shrink-0 p-2 rounded-lg ${selectedItemId === item.id ? 'bg-hieta-blue/20 text-hieta-blue' : 'bg-slate-100 text-slate-500'}`}>
                                             <Box size={18} />
                                           </div>
                                           <div>
-                                            <p className={`font-bold text-sm ${selectedItemId === item.id ? 'text-blue-900' : 'text-slate-800'}`}>{item.type}</p>
+                                            <p className={`font-bold text-sm ${selectedItemId === item.id ? 'text-hieta-blue' : 'text-slate-800'}`}>{item.type}</p>
                                             <p className="text-xs text-slate-500 line-clamp-1">{item.description}</p>
                                           </div>
                                        </div>
@@ -146,7 +146,7 @@ const ElementsTab: React.FC = () => {
         <div className="p-3 border-t border-slate-200 bg-slate-50/50">
              <button 
                 onClick={() => setIsAddModalOpen(true)}
-                className="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-blue-700 shadow-sm active:scale-95 transition-all"
+                className="w-full bg-hieta-black text-white font-bold py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-slate-800 card-shadow hover-lift active:scale-95 transition-all duration-200"
             >
                 <Plus size={18} /> Lisää elementti pohjasta
             </button>

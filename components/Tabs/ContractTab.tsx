@@ -30,10 +30,10 @@ const ContractTab: React.FC = () => {
       <div className="max-w-[210mm] mx-auto pb-20">
           
         {/* Action Toolbar */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-8 flex items-center justify-between print:hidden">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 card-shadow mb-8 flex items-center justify-between print:hidden">
             <div>
                 <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                    <FileSignature className="text-blue-600" /> Toimitussopimus
+                    <FileSignature className="text-hieta-blue" /> Toimitussopimus
                 </h1>
                 <p className="text-sm text-slate-500">Tarkista ja hyväksy sopimus luodaksesi kaupan.</p>
             </div>
@@ -66,16 +66,16 @@ const ContractTab: React.FC = () => {
 
         {/* Post-Acceptance Actions */}
         {isSigned && (
-            <div className="bg-blue-50 border-2 border-dashed border-blue-200 rounded-xl p-6 mb-8 print:hidden animate-in fade-in">
-                <h2 className="font-bold text-lg text-blue-900 flex items-center gap-2">
+            <div className="bg-hieta-blue/10 border-2 border-dashed border-hieta-blue/30 rounded-xl p-6 mb-8 print:hidden animate-in fade-in">
+                <h2 className="font-bold text-lg text-hieta-blue flex items-center gap-2">
                     <FileStack /> Jälkitoimenpiteet
                 </h2>
-                <p className="text-sm text-blue-800 mt-2 mb-4">Sopimus on hyväksytty. Voit nyt lähettää asiakkaalle ja muille osapuolille tarvittavat ohjeet ja dokumentit.</p>
+                <p className="text-sm text-slate-700 mt-2 mb-4">Sopimus on hyväksytty. Voit nyt lähettää asiakkaalle ja muille osapuolille tarvittavat ohjeet ja dokumentit.</p>
                 
                 <div className="flex items-start gap-6">
                     <button 
                         onClick={() => setIsModalOpen(true)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-3 rounded-lg flex items-center gap-2 shadow-md transition-colors"
+                        className="bg-hieta-black hover:bg-slate-800 text-white font-bold px-5 py-3 rounded-lg flex items-center gap-2 card-shadow hover-lift transition-all duration-200"
                     >
                         <Send size={16} /> Lähetä ohjeet ja dokumentit
                     </button>
