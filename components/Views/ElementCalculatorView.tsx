@@ -190,8 +190,9 @@ Palauta vastaus JSON-muodossa seuraavalla rakenteella:
 Ole tarkka mitoissa ja anna realistisia määriä.`;
 
       // Call Gemini API
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        apiUrl,
         {
           method: 'POST',
           headers: {
