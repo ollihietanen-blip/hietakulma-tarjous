@@ -1,6 +1,3 @@
-
-
-
 export type QuotationStatus = 
   | 'draft'               // Luonnos, muokattavissa
   | 'awaiting_approval'   // Lähetetty hyväksyttäväksi (TJ)
@@ -44,6 +41,13 @@ export interface ProjectFile {
     uploader: string; // e.g., "Olli Hietanen" or "Asiakas"
 }
 
+export interface Schedule {
+  productionStart?: Date;
+  productionEnd?: Date;
+  installationStart?: Date;
+  installationEnd?: Date;
+}
+
 export interface Quotation {
   id: string;
   createdAt: Date;
@@ -84,6 +88,7 @@ export interface Quotation {
   files: ProjectFile[];
 
   project: Project;
+  schedule: Schedule; // New Schedule Object
   customer: Customer;
   documents: DocumentItem[];
   elements: ElementSection[];

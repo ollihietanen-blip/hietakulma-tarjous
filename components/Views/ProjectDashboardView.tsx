@@ -1,16 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
-import { FolderCog, ArrowRight, Save, Phone, Mail, MessageCircle, FileText, Send, Lock, User, FileSignature, MapPin, Hash, Calendar } from 'lucide-react';
+import { FolderCog, ArrowRight, Save, Phone, Mail, MessageCircle, FileText, Send, Lock, User, FileSignature, MapPin, Hash, Calendar, Clock } from 'lucide-react';
 
 interface ProjectDashboardViewProps {
   onNext: () => void;
 }
 
 const ProjectDashboardView: React.FC<ProjectDashboardViewProps> = ({ onNext }) => {
-  const { quotation, updateProject, addMessage, updateContract } = useQuotation();
-  const { project, customer, messages, contract } = quotation;
+  const { quotation, updateProject, updateSchedule, addMessage, updateContract } = useQuotation();
+  const { project, schedule, customer, messages, contract } = quotation;
   
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingSchedule, setIsEditingSchedule] = useState(false);
   const [isEditingContract, setIsEditingContract] = useState(false);
   const [newMessage, setNewMessage] = useState('');
   const [messageType, setMessageType] = useState<'customer' | 'internal'>('customer');
@@ -43,6 +44,9 @@ const ProjectDashboardView: React.FC<ProjectDashboardViewProps> = ({ onNext }) =
       }
       return formatted;
   };
+
+  // Helper to safely format dates for input
+  const formatDateForInput = (date?: Date) => date ? new Date(date).toISOString().split('T')[0] : '';
 
   const inputClasses = "w-full px-4 py-3 bg-white border border-slate-300 text-slate-900 rounded-lg shadow-sm font-medium hover:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:outline-none transition-all duration-200 placeholder:text-slate-400";
   const labelClasses = "block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 ml-1";
@@ -131,6 +135,93 @@ const ProjectDashboardView: React.FC<ProjectDashboardViewProps> = ({ onNext }) =
                             </div>
                         </div>
                      )}
+                </div>
+
+                {/* Schedule Card */}
+                <div className={cardClasses}>
+                    <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                        <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <Clock size={18} className="text-blue-600"/> Aikataulu & Resurssit
+                        </h2>
+                        <button onClick={() => setIsEditingSchedule(!isEditingSchedule)} className="text-xs font-bold text-blue-600 hover:underline">
+                            {isEditingSchedule ? 'Sulje' : 'Muokkaa'}
+                        </button>
+                    </div>
+
+                    {!isEditingSchedule ? (
+                        <div className="space-y-4">
+                            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <span className="text-xs font-bold text-slate-400 uppercase block mb-1">Toimitusviikko</span>
+                                <span className="font-bold text-slate-900 text-lg">{project.deliveryWeek || 'Ei määritetty'}</span>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <div className="text-xs font-bold text-orange-600 uppercase mb-1">Tuotanto</div>
+                                    <div className="text-slate-700">
+                                        {schedule.productionStart ? new Date(schedule.productionStart).toLocaleDateString() : '-'} <br/> 
+                                        {schedule.productionEnd ? new Date(schedule.productionEnd).toLocaleDateString() : ''}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs font-bold text-purple-600 uppercase mb-1">Asennus</div>
+                                    <div className="text-slate-700">
+                                        {schedule.installationStart ? new Date(schedule.installationStart).toLocaleDateString() : '-'} <br/>
+                                        {schedule.installationEnd ? new Date(schedule.installationEnd).toLocaleDateString() : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-4 animate-in fade-in">
+                            <div>
+                                <label className={labelClasses}>Toimitusviikko (Arvio)</label>
+                                <input 
+                                    type="text" 
+                                    value={project.deliveryWeek || ''} 
+                                    onChange={(e) => updateProject({ deliveryWeek: e.target.value })} 
+                                    className={inputClasses}
+                                    placeholder="esim. Vko 45"
+                                />
+                            </div>
+                            
+                            <div className="pt-2 border-t border-slate-100">
+                                <label className="text-xs font-bold text-orange-600 uppercase mb-2 block">Tuotantoaikataulu</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <input 
+                                        type="date" 
+                                        value={formatDateForInput(schedule.productionStart)} 
+                                        onChange={(e) => updateSchedule({ productionStart: e.target.valueAsDate || undefined })} 
+                                        className={`${inputClasses} text-xs px-2`}
+                                    />
+                                    <input 
+                                        type="date" 
+                                        value={formatDateForInput(schedule.productionEnd)} 
+                                        onChange={(e) => updateSchedule({ productionEnd: e.target.valueAsDate || undefined })} 
+                                        className={`${inputClasses} text-xs px-2`}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="pt-2 border-t border-slate-100">
+                                <label className="text-xs font-bold text-purple-600 uppercase mb-2 block">Asennusaikataulu</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <input 
+                                        type="date" 
+                                        value={formatDateForInput(schedule.installationStart)} 
+                                        onChange={(e) => updateSchedule({ installationStart: e.target.valueAsDate || undefined })} 
+                                        className={`${inputClasses} text-xs px-2`}
+                                    />
+                                    <input 
+                                        type="date" 
+                                        value={formatDateForInput(schedule.installationEnd)} 
+                                        onChange={(e) => updateSchedule({ installationEnd: e.target.valueAsDate || undefined })} 
+                                        className={`${inputClasses} text-xs px-2`}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Contract Card */}

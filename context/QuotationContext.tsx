@@ -17,7 +17,8 @@ import {
   QuotationStatus,
   CostEntry,
   Message,
-  SentInstruction
+  SentInstruction,
+  Schedule
 } from '../types';
 
 // Simple UUID generator for browsers that might not have crypto.randomUUID
@@ -186,6 +187,12 @@ const getInitialState = (): Quotation => ({
       offerDate: new Date(),
       owner: 'Olli Hietanen'
     },
+    schedule: {
+      productionStart: undefined,
+      productionEnd: undefined,
+      installationStart: undefined,
+      installationEnd: undefined
+    },
     customer: {
       name: 'Matti Meikäläinen',
       contactPerson: 'Matti Meikäläinen',
@@ -253,6 +260,7 @@ interface QuotationContextType {
   saveQuotation: () => void;
   updateProject: (project: Partial<Quotation['project']>) => void;
   updateCustomer: (customer: Partial<Quotation['customer']>) => void;
+  updateSchedule: (schedule: Partial<Schedule>) => void;
   updateDocument: (id: string, updates: Partial<DocumentItem>) => void;
   addElement: (sectionId: string, element: any) => void;
   removeElement: (sectionId: string, elementId: string) => void;
@@ -331,6 +339,10 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const updateCustomer = (customer: Partial<Quotation['customer']>) => {
     setQuotation(prev => ({ ...prev, customer: { ...prev.customer, ...customer } }));
+  };
+
+  const updateSchedule = (scheduleUpdates: Partial<Schedule>) => {
+    setQuotation(prev => ({ ...prev, schedule: { ...prev.schedule, ...scheduleUpdates } }));
   };
 
   const updateDocument = (id: string, updates: Partial<DocumentItem>) => {
@@ -682,6 +694,7 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       saveQuotation,
       updateProject,
       updateCustomer,
+      updateSchedule,
       updateDocument,
       addElement,
       removeElement,

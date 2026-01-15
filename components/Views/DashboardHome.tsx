@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
 import { UserRole } from '../../App';
@@ -42,10 +40,10 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNewQuote, userRole = 's
 
   // --- SHARED MOCK DATA ---
   const recentQuotes = [
-    { id: '1', customer: 'Matti Meikäläinen', project: 'Loma-asunto Levi', price: '45 200 €', status: 'Avoin', date: '2 pv sitten', owner: 'Olli Hietanen' },
-    { id: '2', customer: 'Rakennus Oy Esimerkki', project: 'Rivitalo Espoo', price: '128 500 €', status: 'Luonnos', date: '5 pv sitten', owner: 'Olli Hietanen' },
-    { id: '3', customer: 'Teppo Testaaja', project: 'Autotalli', price: '12 800 €', status: 'Hyväksytty', date: '1 vk sitten', owner: 'Matti Myyjä' },
-    { id: '4', customer: 'As Oy Saimaa', project: 'Rivitalo 4 as.', price: '320 000 €', status: 'Odottaa hyväksyntää', date: '1 pv sitten', owner: 'Pekka Pomo', needsApproval: true },
+    { id: '1', customer: 'Matti Meikäläinen', project: 'Loma-asunto Levi', price: '45 200 €', status: 'Avoin', date: '2 pv sitten', owner: 'Olli Hietanen', delivery: 'Vko 45' },
+    { id: '2', customer: 'Rakennus Oy Esimerkki', project: 'Rivitalo Espoo', price: '128 500 €', status: 'Luonnos', date: '5 pv sitten', owner: 'Olli Hietanen', delivery: 'Q4/2024' },
+    { id: '3', customer: 'Teppo Testaaja', project: 'Autotalli', price: '12 800 €', status: 'Hyväksytty', date: '1 vk sitten', owner: 'Matti Myyjä', delivery: 'Vko 40' },
+    { id: '4', customer: 'As Oy Saimaa', project: 'Rivitalo 4 as.', price: '320 000 €', status: 'Odottaa hyväksyntää', date: '1 pv sitten', owner: 'Pekka Pomo', needsApproval: true, delivery: '2025' },
   ];
 
   // Filter quotes based on role (Manager sees all, Sales sees theirs)
@@ -149,10 +147,18 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNewQuote, userRole = 's
                         </div>
                         <div className="text-right">
                             <div className="font-bold text-slate-900">{quote.price}</div>
-                            <div className={`text-xs font-bold px-2 py-0.5 rounded inline-block mt-1 
-                                ${quote.status === 'Hyväksytty' ? 'text-green-600 bg-green-50' : 
-                                  quote.needsApproval ? 'text-amber-700 bg-amber-50' : 'text-slate-500 bg-slate-100'}`}>
-                                {quote.status}
+                            {/* Added delivery Info */}
+                            <div className="flex flex-col items-end mt-1 gap-1">
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded
+                                    ${quote.status === 'Hyväksytty' ? 'text-green-600 bg-green-50' : 
+                                    quote.needsApproval ? 'text-amber-700 bg-amber-50' : 'text-slate-500 bg-slate-100'}`}>
+                                    {quote.status}
+                                </span>
+                                {quote.delivery && (
+                                    <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                                        <Clock size={10} /> Toimitus: {quote.delivery}
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -162,11 +168,11 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNewQuote, userRole = 's
 
           {/* Sidebar Widgets - CONDITIONAL BASED ON ROLE */}
           <div className="space-y-6">
-              
-              {/* === SALESPERSON VIEW: TARGET & COMMISSION === */}
+              {/* ... (Existing Widgets - No Changes) ... */}
               {userRole === 'sales' && (
                   <>
                     <div className="bg-slate-900 text-white rounded-xl p-6 shadow-lg border border-slate-800 relative overflow-hidden">
+                        {/* ... (Existing Target Widget content) ... */}
                         <div className="relative z-10">
                             <div className="flex justify-between items-start mb-4">
                                 <h3 className="font-display font-bold text-lg flex items-center gap-2">
@@ -243,7 +249,6 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNewQuote, userRole = 's
                         </div>
                     </div>
 
-                    {/* Commission Widget (Sales Only) */}
                     <div className="bg-gradient-to-br from-emerald-50 to-white rounded-xl border border-emerald-200 shadow-sm p-6">
                         <h3 className="font-display font-bold text-lg text-emerald-900 mb-4 flex items-center gap-2">
                             <Coins size={20} className="text-emerald-600" /> Arvioitu Provisio
@@ -260,8 +265,6 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNewQuote, userRole = 's
                   </>
               )}
 
-
-              {/* === MANAGER VIEW: TEAM & APPROVALS === */}
               {userRole === 'manager' && (
                   <>
                      <div className="bg-purple-900 text-white rounded-xl p-6 shadow-lg border border-purple-800 relative overflow-hidden">
