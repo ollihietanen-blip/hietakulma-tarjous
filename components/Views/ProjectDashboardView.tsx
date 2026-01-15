@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
+import Breadcrumb from '../Layout/Breadcrumb';
 import { FolderCog, ArrowRight, Save, Phone, Mail, MessageCircle, FileText, Send, Lock, User, FileSignature, MapPin, Hash, Calendar, Clock, Copy, CheckCircle2, X, CheckSquare, Square, Mic, MicOff, Plus as PlusIcon, Bell, AlertCircle } from 'lucide-react';
 
 interface ProjectDashboardViewProps {
@@ -71,6 +72,15 @@ const ProjectDashboardView: React.FC<ProjectDashboardViewProps> = ({ onNext }) =
 
   return (
     <div className="p-8 max-w-7xl mx-auto animate-in fade-in duration-300">
+        <div className="mb-6">
+            <Breadcrumb 
+                items={[
+                    { label: 'Etusivu' },
+                    { label: 'Projektit' },
+                    { label: project.name || 'Nimetön Projekti' }
+                ]}
+            />
+        </div>
         <div className="flex justify-between items-end mb-8">
             <div>
                 <h1 className="text-3xl font-display font-bold text-slate-900 flex items-center gap-3">

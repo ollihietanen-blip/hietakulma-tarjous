@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
-import { ArrowRight, Ruler, Home, Box, Layers, PenTool, CheckCircle, Upload, FileText, X, Sparkles, Loader2 } from 'lucide-react';
+import Breadcrumb from '../Layout/Breadcrumb';
+import { ArrowRight, Ruler, Home, Box, Layers, PenTool, CheckCircle, Upload, FileText, X, Sparkles, Loader2, AlertCircle, Plus } from 'lucide-react';
 
 interface ElementCalculatorViewProps {
   onComplete: () => void;
@@ -39,16 +40,28 @@ const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplet
   const { addElement, quotation } = useQuotation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Opening type definition
+  interface Opening {
+    id: string;
+    type: 'window' | 'door' | 'other';
+    quantity: number;
+    area: number; // m²
+    description?: string;
+  }
+
   // Basic dimensions state
   const [dims, setDims] = useState({
       width: 8,
       length: 12,
       floors: 1,
       height: 2.8,
-      windowCount: 5,
-      windowArea: 8,
       structureType: 'US-198'
   });
+
+  // Openings state - list of openings
+  const [openings, setOpenings] = useState<Opening[]>([
+    { id: '1', type: 'window', quantity: 5, area: 8, description: 'Ikkunat' }
+  ]);
 
   // Document upload state
   const [uploadedDocs, setUploadedDocs] = useState<UploadedDocument[]>([]);
@@ -56,11 +69,18 @@ const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplet
   const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Selected items to transfer to quotation
+  const [selectedItems, setSelectedItems] = useState({
+    wallElements: true, // Default selected
+  });
+
   // Calculations
   const perimeter = (dims.width + dims.length) * 2;
   const wallAreaGross = perimeter * dims.height * dims.floors;
-  const wallAreaNet = wallAreaGross - dims.windowArea;
+  const totalOpeningArea = openings.reduce((sum, opening) => sum + (opening.area * opening.quantity), 0);
+  const wallAreaNet = wallAreaGross - totalOpeningArea;
   const floorArea = dims.width * dims.length * dims.floors;
+  const totalOpeningCount = openings.reduce((sum, opening) => sum + opening.quantity, 0);
 
   // File handling
   const handleFileSelect = (files: FileList | null) => {
@@ -266,26 +286,35 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
     const elementCount = Math.ceil(perimeter / elementWidth); 
 
     if (wallAreaNet > 0) {
-        // Create one batch entry for the calculated elements
-        addElement('section-ext-walls', {
-            type: `Ulkoseinä ${dims.structureType} (Laskettu)`,
-            description: `Määrälaskennasta: Kehä ${perimeter}m, Korkeus ${dims.height}m. \nBruttoala ${wallAreaGross.toFixed(1)}m², Aukot ${dims.windowArea}m²`,
-            specifications: {
-                height: `${dims.height * 1000} mm`,
-                uValue: dims.structureType === 'US-198' ? '0,17 W/m²K' : '0,25 W/m²K',
-                cladding: 'UTW 28x195',
-            },
-            quantity: elementCount,
-            unit: 'kpl',
-            unitPrice: 450, // Base price estimate
-            netArea: Number((wallAreaNet / elementCount).toFixed(1)),
-            hasWindowInstall: dims.windowCount > 0,
-            windowCount: Math.ceil(dims.windowCount / elementCount),
-            windowInstallPrice: 45
-        });
-        
-        alert(`${elementCount}kpl seinäelementtejä lisätty onnistuneesti tarjoukseen!`);
-        onComplete();
+        let addedCount = 0;
+
+        // Add wall elements if selected
+        if (selectedItems.wallElements) {
+            addElement('section-ext-walls', {
+                type: `Ulkoseinä ${dims.structureType} (Laskettu)`,
+                description: `Määrälaskennasta: Kehä ${perimeter}m, Korkeus ${dims.height}m. \nBruttoala ${wallAreaGross.toFixed(1)}m², Aukot ${totalOpeningArea.toFixed(1)}m²`,
+                specifications: {
+                    height: `${dims.height * 1000} mm`,
+                    uValue: dims.structureType === 'US-198' ? '0,17 W/m²K' : '0,25 W/m²K',
+                    cladding: 'UTW 28x195',
+                },
+                quantity: elementCount,
+                unit: 'kpl',
+                unitPrice: 450, // Base price estimate
+                netArea: Number((wallAreaNet / elementCount).toFixed(1)),
+                hasWindowInstall: totalOpeningCount > 0,
+                windowCount: Math.ceil(totalOpeningCount / elementCount),
+                windowInstallPrice: 45
+            });
+            addedCount += elementCount;
+        }
+
+        if (addedCount > 0) {
+            alert(`${addedCount}kpl elementtejä lisätty onnistuneesti tarjoukseen!`);
+            onComplete();
+        } else {
+            alert('Valitse vähintään yksi tuote siirrettäväksi.');
+        }
     } else {
         alert('Ei lisättävää, tarkista syötetyt mitat.');
     }
@@ -296,6 +325,16 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
 
   return (
     <div className="p-8 max-w-6xl mx-auto animate-in slide-in-from-right-4 duration-500">
+      <div className="mb-6">
+        <Breadcrumb 
+          items={[
+            { label: 'Etusivu' },
+            { label: 'Projektit' },
+            { label: quotation.project.name || 'Nimetön Projekti' },
+            { label: 'Elementtilaskuri' }
+          ]}
+        />
+      </div>
       <div className="mb-8 border-b border-slate-200 pb-6">
         <h1 className="text-3xl font-display font-bold text-slate-900 flex items-center gap-3">
             <Box className="text-hieta-blue" /> Puuelementtilaskenta
@@ -558,17 +597,127 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
 
               {/* Openings */}
               <div className="bg-white p-6 rounded-xl border border-slate-200 card-shadow hover-lift">
-                  <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-                      <Layers className="text-orange-500" /> Aukot
-                  </h3>
-                  <div className="grid grid-cols-2 gap-6">
-                      <div>
-                          <label className={labelClass}>Ikkunoiden määrä (kpl)</label>
-                          <input type="number" min="0" className={inputClass} value={dims.windowCount} onChange={e => setDims({...dims, windowCount: Number(e.target.value)})} />
+                  <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
+                          <Layers className="text-orange-500" /> Aukot
+                      </h3>
+                      <button
+                          onClick={() => {
+                              const newOpening: Opening = {
+                                  id: Date.now().toString(),
+                                  type: 'window',
+                                  quantity: 1,
+                                  area: 1.0,
+                                  description: ''
+                              };
+                              setOpenings([...openings, newOpening]);
+                          }}
+                          className="text-xs font-bold text-hieta-blue hover:text-hieta-blue/80 flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                      >
+                          <Plus size={14} /> Lisää aukko
+                      </button>
+                  </div>
+                  
+                  <div className="space-y-3 mb-4">
+                      {openings.map((opening, index) => (
+                          <div key={opening.id} className="p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+                              <div className="grid grid-cols-12 gap-3 items-end">
+                                  <div className="col-span-12 sm:col-span-3">
+                                      <label className={labelClass}>Tyyppi</label>
+                                      <select
+                                          className={inputClass}
+                                          value={opening.type}
+                                          onChange={(e) => {
+                                              const updated = [...openings];
+                                              updated[index].type = e.target.value as 'window' | 'door' | 'other';
+                                              setOpenings(updated);
+                                          }}
+                                      >
+                                          <option value="window">Ikkuna</option>
+                                          <option value="door">Ovi</option>
+                                          <option value="other">Muu</option>
+                                      </select>
+                                  </div>
+                                  <div className="col-span-6 sm:col-span-2">
+                                      <label className={labelClass}>Määrä (kpl)</label>
+                                      <input
+                                          type="number"
+                                          min="1"
+                                          step="1"
+                                          className={inputClass}
+                                          value={opening.quantity}
+                                          onChange={(e) => {
+                                              const updated = [...openings];
+                                              updated[index].quantity = Number(e.target.value);
+                                              setOpenings(updated);
+                                          }}
+                                      />
+                                  </div>
+                                  <div className="col-span-6 sm:col-span-3">
+                                      <label className={labelClass}>Ala per kpl (m²)</label>
+                                      <input
+                                          type="number"
+                                          min="0"
+                                          step="0.1"
+                                          className={inputClass}
+                                          value={opening.area}
+                                          onChange={(e) => {
+                                              const updated = [...openings];
+                                              updated[index].area = Number(e.target.value);
+                                              setOpenings(updated);
+                                          }}
+                                      />
+                                  </div>
+                                  <div className="col-span-12 sm:col-span-3">
+                                      <label className={labelClass}>Yhteensä (m²)</label>
+                                      <div className="px-4 py-3 bg-slate-100 border border-slate-300 rounded-lg font-bold text-slate-900">
+                                          {(opening.area * opening.quantity).toFixed(1)} m²
+                                      </div>
+                                  </div>
+                                  <div className="col-span-12 sm:col-span-1 flex justify-end">
+                                      <button
+                                          onClick={() => {
+                                              if (openings.length > 1) {
+                                                  setOpenings(openings.filter((_, i) => i !== index));
+                                              } else {
+                                                  alert('Vähintään yksi aukko vaaditaan.');
+                                              }
+                                          }}
+                                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                          title="Poista aukko"
+                                      >
+                                          <X size={18} />
+                                      </button>
+                                  </div>
+                              </div>
+                              {opening.description && (
+                                  <div className="mt-2">
+                                      <label className={labelClass}>Kuvaus (valinnainen)</label>
+                                      <input
+                                          type="text"
+                                          className={inputClass}
+                                          value={opening.description}
+                                          onChange={(e) => {
+                                              const updated = [...openings];
+                                              updated[index].description = e.target.value;
+                                              setOpenings(updated);
+                                          }}
+                                          placeholder="esim. Parvekeovi, Päätyikkuna..."
+                                      />
+                                  </div>
+                              )}
+                          </div>
+                      ))}
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-200">
+                      <div className="flex justify-between items-center text-sm">
+                          <span className="text-slate-600 font-medium">Aukkoja yhteensä:</span>
+                          <span className="font-bold text-slate-900">{totalOpeningCount} kpl</span>
                       </div>
-                      <div>
-                          <label className={labelClass}>Aukkojen ala yht. (m²)</label>
-                          <input type="number" min="0" step="0.1" className={inputClass} value={dims.windowArea} onChange={e => setDims({...dims, windowArea: Number(e.target.value)})} />
+                      <div className="flex justify-between items-center text-sm mt-1">
+                          <span className="text-slate-600 font-medium">Aukkojen ala yhteensä:</span>
+                          <span className="font-bold text-hieta-blue">{totalOpeningArea.toFixed(1)} m²</span>
                       </div>
                   </div>
               </div>
@@ -600,15 +749,30 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
                   </div>
 
                   <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-                      <div className="text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider">Arvioidut tarvikkeet (siirtyy tarjoukseen)</div>
+                      <div className="text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider">Arvioidut tarvikkeet (valitse siirrettävät)</div>
                       <div className="space-y-3">
-                         <div className="flex items-center justify-between text-sm">
-                             <div className="flex items-center gap-2 text-slate-300">
-                                <Box size={16} className="text-hieta-blue"/> Seinäelementit
+                         <label className="flex items-center justify-between text-sm cursor-pointer hover:bg-slate-700/50 p-2 rounded-lg transition-colors group">
+                             <div className="flex items-center gap-3">
+                                 <input
+                                     type="checkbox"
+                                     checked={selectedItems.wallElements}
+                                     onChange={(e) => setSelectedItems({ ...selectedItems, wallElements: e.target.checked })}
+                                     className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-hieta-blue focus:ring-2 focus:ring-hieta-blue/50 focus:ring-offset-2 focus:ring-offset-slate-800 cursor-pointer"
+                                 />
+                                 <div className="flex items-center gap-2 text-slate-300 group-hover:text-white">
+                                    <Box size={16} className="text-hieta-blue"/> 
+                                    <span className="font-medium">Seinäelementit</span>
+                                 </div>
                              </div>
                              <span className="font-bold text-white">~{Math.ceil(perimeter / 3.0)} kpl</span>
-                         </div>
+                         </label>
                       </div>
+                      {!selectedItems.wallElements && (
+                          <div className="mt-3 text-xs text-amber-400 flex items-center gap-1">
+                              <AlertCircle size={12} />
+                              Valitse vähintään yksi tuote
+                          </div>
+                      )}
                   </div>
 
                   <button 

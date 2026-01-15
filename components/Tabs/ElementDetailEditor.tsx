@@ -60,14 +60,48 @@ const ElementDetailEditor: React.FC<ElementDetailEditorProps> = ({ item, onRemov
                 placeholder="Elementin kuvaus..."
               />
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div>
-                  <label className={labelBaseClass}>Rakenne</label>
-                  <input type="text" className={inputBaseClass} value={item.specifications.frame || ''} onChange={(e) => handleSpecUpdate('frame', e.target.value)} />
-              </div>
-              <div>
-                  <label className={labelBaseClass}>U-Arvo</label>
-                  <input type="text" className={inputBaseClass} value={item.specifications.uValue || ''} onChange={(e) => handleSpecUpdate('uValue', e.target.value)} />
+            <div className="mt-4 space-y-4">
+              {/* Wall Structure Type Selector - for external walls */}
+              {item.type.toLowerCase().includes('ulkoseinä') || item.type.toLowerCase().includes('seinä') ? (
+                <div>
+                  <label className={labelBaseClass}>Ulkoseinätyyppi</label>
+                  <select
+                    className={`${inputBaseClass} appearance-none cursor-pointer font-bold`}
+                    value={item.specifications.structureType || 'US-198'}
+                    onChange={(e) => {
+                      const newType = e.target.value;
+                      const newUValue = newType === 'US-198' ? '0,17 W/m²K' : '0,25 W/m²K';
+                      const newFrame = newType === 'US-198' ? '42x198' : '42x148';
+                      
+                      handleUpdate({
+                        specifications: {
+                          ...item.specifications,
+                          structureType: newType,
+                          uValue: newUValue,
+                          frame: newFrame
+                        },
+                        type: item.type.replace(/US-\d{3}/g, newType) // Update type name if it contains structure type
+                      });
+                    }}
+                  >
+                    <option value="US-198">US-198 (U=0.17, 42x198)</option>
+                    <option value="US-148">US-148 (U=0.25, 42x148)</option>
+                  </select>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Vaihtamalla tyyppiä päivitetään automaattisesti U-arvo ja rakenne
+                  </p>
+                </div>
+              ) : null}
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className={labelBaseClass}>Rakenne</label>
+                    <input type="text" className={inputBaseClass} value={item.specifications.frame || ''} onChange={(e) => handleSpecUpdate('frame', e.target.value)} />
+                </div>
+                <div>
+                    <label className={labelBaseClass}>U-Arvo</label>
+                    <input type="text" className={inputBaseClass} value={item.specifications.uValue || ''} onChange={(e) => handleSpecUpdate('uValue', e.target.value)} />
+                </div>
               </div>
             </div>
           </div>

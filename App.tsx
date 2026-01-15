@@ -38,13 +38,14 @@ function App() {
       <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900">
         
         {/* Mobile Header */}
-        <div className="fixed top-0 left-0 right-0 h-14 bg-hieta-black text-white z-50 flex items-center justify-between px-4 md:hidden shadow-md">
+        <div className="fixed top-0 left-0 right-0 h-14 bg-hieta-black text-white z-50 flex items-center justify-between px-4 md:hidden shadow-lg border-b border-slate-800">
             <div className="flex items-center gap-3">
                 <button 
                     onClick={() => setIsMobileMenuOpen(true)}
-                    className="p-1 text-slate-300 hover:text-white transition-colors"
+                    className="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors active:scale-95"
+                    aria-label="Avaa valikko"
                 >
-                    <Menu size={24} />
+                    <Menu size={22} />
                 </button>
                 <img 
                     src="/images/Hietakulma_logo_cmyk_valk.png" 
@@ -52,7 +53,7 @@ function App() {
                     className="h-6 w-auto"
                 />
             </div>
-            <div className="w-8 h-8 rounded-full bg-hieta-sand text-hieta-black flex items-center justify-center font-bold text-xs">
+            <div className="w-8 h-8 rounded-full bg-hieta-sand text-hieta-black flex items-center justify-center font-bold text-xs shadow-sm">
                 OH
             </div>
         </div>

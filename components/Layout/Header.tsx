@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuotation } from '../../context/QuotationContext';
+import Breadcrumb from './Breadcrumb';
 import { 
     Save, ArrowLeft, Send, CheckCircle, XCircle, 
     ShieldCheck, Undo2, Lock, FileCheck, Check, RefreshCw, AlertCircle
@@ -148,23 +149,33 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-50 card-shadow px-6 py-3">
-      <div className="flex items-center justify-between gap-4">
+    <header className="bg-white border-b border-slate-200 sticky top-0 z-50 card-shadow">
+      <div className="px-6 py-2 border-b border-slate-100">
+        <Breadcrumb 
+          items={[
+            { label: 'Etusivu' },
+            { label: 'Projektit' },
+            { label: quotation.project.name || 'Nimetön Projekti' },
+            { label: 'Tarjouslaskenta' }
+          ]}
+        />
+      </div>
+      <div className="flex items-center justify-between gap-4 px-6 py-3">
         
         {/* Project Info */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 min-w-0">
           <img 
             src="/images/Hietakulma_logo_cmyk_musta.png" 
             alt="Hietakulma" 
-            className="h-10 w-auto"
+            className="h-10 w-auto flex-shrink-0"
           />
-          <div className="flex items-center gap-3">
-              <div className="bg-hieta-sand w-1.5 h-10 rounded-full"></div>
-              <div>
-                  <h1 className="text-base font-bold text-hieta-black leading-tight">
+          <div className="flex items-center gap-3 min-w-0">
+              <div className="bg-hieta-sand w-1.5 h-10 rounded-full flex-shrink-0"></div>
+              <div className="min-w-0">
+                  <h1 className="text-base font-bold text-hieta-black leading-tight truncate">
                       {quotation.project.name || 'Nimetön projekti'}
                   </h1>
-                  <p className="text-xs text-stone-500 mt-0.5 font-sans">
+                  <p className="text-xs text-stone-500 mt-0.5 font-sans truncate">
                       {quotation.customer.name || 'Ei asiakasta'}
                   </p>
               </div>
@@ -172,7 +183,7 @@ const Header: React.FC = () => {
         </div>
         
         {/* Center: Total & Status */}
-        <div className="flex-1 flex justify-center items-center gap-6">
+        <div className="flex-1 flex justify-center items-center gap-6 min-w-0 hidden lg:flex">
             <div className="text-center">
                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tarjouksen arvo</div>
                 <div className="text-xl font-bold text-blue-700 tabular-nums">
@@ -182,15 +193,15 @@ const Header: React.FC = () => {
         </div>
         
         {/* Right: Actions */}
-        <div className="flex items-center justify-end gap-4">
+        <div className="flex items-center justify-end gap-3 flex-shrink-0">
            {/* Save Status */}
-           <div className="w-48 flex justify-center">{renderSaveStatus()}</div>
+           <div className="hidden xl:flex w-48 justify-center">{renderSaveStatus()}</div>
 
            {/* Dynamic Status Badge */}
-           {getStatusBadge()}
+           <div className="flex-shrink-0">{getStatusBadge()}</div>
            
            {/* Workflow Buttons */}
-           {renderActions()}
+           <div className="flex-shrink-0">{renderActions()}</div>
         </div>
       </div>
     </header>

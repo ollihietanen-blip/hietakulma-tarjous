@@ -159,17 +159,26 @@ const ContractTab: React.FC = () => {
 
             <div className="mb-8 text-sm">
                 <h3 className="font-bold uppercase border-b border-black mb-2">6. Maksuerät</h3>
-                <table className="w-full text-left">
-                    <tbody>
-                        {quotation.paymentSchedule.map(ms => (
-                            <tr key={ms.id}>
-                                <td className="py-1 w-2/3">{ms.description}</td>
-                                <td className="py-1 w-1/6 text-right">{ms.percentage}%</td>
-                                <td className="py-1 w-1/6 text-right">{(ms.amount || 0).toLocaleString('fi-FI', {maximumFractionDigits:0})} €</td>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b-2 border-slate-300">
+                                <th className="py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider text-left">Kuvaus</th>
+                                <th className="py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider text-right">Osuus</th>
+                                <th className="py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider text-right">Summa</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {quotation.paymentSchedule.map((ms, index) => (
+                                <tr key={ms.id} className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                                    <td className="py-3 px-4 font-medium text-slate-900">{ms.description}</td>
+                                    <td className="py-3 px-4 text-right font-medium text-slate-700">{ms.percentage}%</td>
+                                    <td className="py-3 px-4 text-right font-bold text-slate-900 tabular-nums">{(ms.amount || 0).toLocaleString('fi-FI', {maximumFractionDigits:0})} €</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
                 <p className="mt-2 text-xs">Maksuehto 14 pv netto. Viivästyskorko korkolain mukainen.</p>
             </div>
 

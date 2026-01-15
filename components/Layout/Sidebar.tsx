@@ -84,8 +84,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
           </div>
 
           {isProjectMenuExpanded && (
-            <div className="pt-3 pl-4 border-l-2 border-slate-700 ml-5 mt-2 animate-in fade-in duration-300">
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 truncate pr-2">
+            <div className="pt-3 pl-4 border-l-2 border-slate-700 ml-5 mt-2 animate-in fade-in duration-300 space-y-1">
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 truncate pr-2 px-2 py-1 bg-slate-900/30 rounded">
                 {quotation.project.name || 'Nimetön projekti'}
               </div>
               {item.children.map((child: any) => renderMenuItem(child, true))}
@@ -100,19 +100,19 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
       <button
         key={item.id}
         onClick={() => handleNavigation(item.id)}
-        className={`w-full flex items-center justify-between py-2.5 rounded-md transition-all group mb-1 ${isSubItem ? 'px-3 text-sm' : 'px-3'} ${
+        className={`w-full flex items-center justify-between py-2.5 rounded-lg transition-all group mb-1 ${isSubItem ? 'px-3 text-sm' : 'px-3'} ${
           isActive 
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
-            : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+            ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20 border-l-2 border-blue-400' 
+            : 'text-slate-400 hover:bg-slate-800 hover:text-white hover:border-l-2 hover:border-slate-600'
         }`}
       >
         <div className="flex items-center gap-3">
           <span className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-white transition-colors'}>
             {item.icon}
           </span>
-          <span className="font-medium tracking-wide">{item.label}</span>
+          <span className={`font-medium tracking-wide ${isActive ? 'font-bold' : ''}`}>{item.label}</span>
         </div>
-        {isActive && !isSubItem && <ChevronRight size={14} />}
+        {isActive && !isSubItem && <ChevronRight size={14} className="text-white" />}
       </button>
     );
   };
@@ -142,7 +142,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
               className="h-8 w-auto"
             />
             <span className="text-[10px] tracking-[0.3em] text-slate-500 uppercase font-sans font-medium">
-              Myynti
+              Myynti ERP
             </span>
           </div>
           {/* Mobile Close Button */}
@@ -152,11 +152,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
         </div>
 
         {/* Menu */}
-        <nav className="flex-1 py-6 px-3 overflow-y-auto">
+        <nav className="flex-1 py-6 px-3 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900">
           {menuSections.map(section => (
             <div key={section.title} className="mb-6">
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider px-3 mb-2">{section.title}</div>
-              {section.items.map(item => renderMenuItem(item))}
+              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider px-3 mb-3">{section.title}</div>
+              <div className="space-y-1">
+                {section.items.map(item => renderMenuItem(item))}
+              </div>
             </div>
           ))}
         </nav>

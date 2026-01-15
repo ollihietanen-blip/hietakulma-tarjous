@@ -90,15 +90,16 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNewQuote, userRole = 's
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {stats.map((stat, i) => (
-            <div key={i} className="bg-white p-6 rounded-xl border border-slate-100 card-shadow hover-lift flex items-start justify-between group hover:border-hieta-wood-accent transition-all duration-200">
-                <div>
+            <div key={i} className="bg-white p-6 rounded-xl border border-slate-100 card-shadow hover-lift flex items-start justify-between group hover:border-hieta-wood-accent transition-all duration-200 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-slate-50 to-transparent opacity-50"></div>
+                <div className="relative z-10 flex-1">
                     <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{stat.label}</div>
                     <div className="text-3xl font-display font-bold text-slate-900 flex items-baseline gap-1">
                         {stat.value}
                         <span className="text-sm font-sans font-medium text-slate-500">{stat.unit}</span>
                     </div>
                 </div>
-                <div className={`px-2.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1 ${stat.bg} ${stat.color}`}>
+                <div className={`px-2.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1 ${stat.bg} ${stat.color} relative z-10 flex-shrink-0`}>
                     <ArrowUpRight size={12} /> {stat.change}
                 </div>
             </div>

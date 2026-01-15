@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
+import Breadcrumb from '../Layout/Breadcrumb';
 import { Triangle, ArrowRight, CornerRightUp, Scissors, Share, PlusCircle, Ruler, Scale, Truck, CheckSquare, Square, Info } from 'lucide-react';
 
 interface TrussCalculatorViewProps {
@@ -253,8 +254,20 @@ const TrussCalculatorView: React.FC<TrussCalculatorViewProps> = ({ onComplete })
   const inputClass = "w-full bg-white border border-slate-300 text-slate-900 rounded-lg p-3 font-medium focus:border-hieta-blue focus:ring-2 focus:ring-hieta-blue/20 outline-none transition-all card-shadow";
   const labelClass = "block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2";
 
+  const { quotation } = useQuotation();
+
   return (
     <div className="p-8 max-w-7xl mx-auto animate-in fade-in duration-300">
+      <div className="mb-6">
+        <Breadcrumb 
+          items={[
+            { label: 'Etusivu' },
+            { label: 'Projektit' },
+            { label: quotation.project.name || 'Nimetön Projekti' },
+            { label: 'Ristikkolaskuri' }
+          ]}
+        />
+      </div>
       <div className="mb-8 border-b border-slate-200 pb-6">
         <h1 className="text-3xl font-display font-bold text-slate-900 flex items-center gap-3">
           <Triangle className="text-hieta-blue" /> Ristikkolaskenta
