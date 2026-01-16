@@ -4,7 +4,7 @@ import { CostEntry, CostEntryCategory } from '../../types';
 import { Plus, Trash2, TrendingUp, AlertTriangle, CheckCircle, Calculator, PieChart, List, BarChart3, Box, Grid, Upload, FileText, X, Loader } from 'lucide-react';
 import Header from '../Layout/Header';
 import { useAction } from 'convex/react';
-import { api } from '../../convex/_generated/api';
+import { api } from '../../convex/_generated/api.js';
 import { isConvexConfigured } from '../../lib/convexClient';
 
 interface InvoiceAnalysis {

@@ -15,7 +15,7 @@ import ContractView from './components/Views/ContractView';
 import UsersManagementView from './components/Views/UsersManagementView';
 import { Menu } from 'lucide-react';
 import { useQuery } from 'convex/react';
-import { api } from './convex/_generated/api';
+import { api } from './convex/_generated/api.js';
 import { isConvexConfigured } from './lib/convexClient';
 import { Id } from './convex/_generated/dataModel';
 

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery } from 'convex/react';
-import { api } from '../convex/_generated/api';
+import { api } from '../convex/_generated/api.js';
 import { Id } from '../convex/_generated/dataModel';
 import { isConvexConfigured } from '../lib/convexClient';
 import {

@@ -3,7 +3,7 @@ import { useQuotation } from '../../context/QuotationContext';
 import { LayoutDashboard, Calculator, FileText, Users, LogOut, ChevronRight, KanbanSquare, X, PieChart, RefreshCw, FolderCog, Triangle, Box, ChevronDown, ListTree, Calendar, FileSignature, UserCog } from 'lucide-react';
 import { UserRole } from '../../App';
 import { useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
+import { api } from '../../convex/_generated/api.js';
 import { isConvexConfigured } from '../../lib/convexClient';
 import { Id } from '../../convex/_generated/dataModel';
 

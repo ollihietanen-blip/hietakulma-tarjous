@@ -7,7 +7,7 @@ import { isConvexConfigured } from '../../lib/convexClient';
 
 // Conditional import for Convex API (handles missing generated files in build)
 // @ts-ignore - Generated file may not exist in build
-import { api } from '../../convex/_generated/api';
+import { api } from '../../convex/_generated/api.js';
 
 interface ElementCalculatorViewProps {
   onComplete: () => void;

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Send, Sparkles, RefreshCw, User, Building2, FileText, AlertCircle } from 'lucide-react';
 import { Quotation, QuotationVersion } from '../../types';
 import { useAction } from 'convex/react';
-import { api } from '../../convex/_generated/api';
+import { api } from '../../convex/_generated/api.js';
 import { isConvexConfigured } from '../../lib/convexClient';
 
 interface SendQuotationModalProps {
