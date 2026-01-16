@@ -18,6 +18,18 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
-      }
+      },
+      build: {
+        chunkSizeWarningLimit: 1000, // Increase limit to 1000 KB to suppress warning
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              // Separate vendor chunks for better caching
+              'react-vendor': ['react', 'react-dom'],
+              'convex-vendor': ['convex/react'],
+            },
+          },
+        },
+      },
     };
 });
