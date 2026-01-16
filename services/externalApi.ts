@@ -30,7 +30,7 @@ export class ExternalApiClient {
   private baseUrl: string;
 
   constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl || process.env.EXTERNAL_API_URL || '';
+    this.baseUrl = baseUrl || import.meta.env.VITE_EXTERNAL_API_URL || '';
   }
 
   async getProject(projectId: string): Promise<ExternalProject | null> {
