@@ -623,14 +623,30 @@ Esim: 16 676 mm / 900 mm = 18,5 → 19 kpl
 
 ---
 
-## 13. ESIMERKKIKYSYMYKSET
+## 13. KYSYMYKSET – VAIN MÄÄRÄLASKENTAAN VAIIKUTTAVAT
 
-Jos tarvitset lisätietoja:
-- "Mikä on HVS-seinän tarkka sijainti millimetreinä?"
-- "Mikä on todellinen elementtikorkeus lattiatasosta yläpohjaan?"
-- "Onko kattoristikkojen k-jako 900mm?"
-- "Muuttuuko sisäkatto vinoksi jossakin kohdassa?"
-- "Onko väliseinissä erityisvaatimuksia (ääni, palo, kosteus)?"
+**TÄRKEÄÄ:** Kysy kysymyksiä VAIN jos ne vaikuttavat suoraan elementtien määriin, kokoihin, tyyppeihin tai hinnoitteluun.
+
+### Kysy kysymyksiä, jotka vaikuttavat:
+- ✅ **Elementtien määriin:** "Kuinka monta kerrosta rakennuksessa on?" (vaikuttaa välipohjien määrään)
+- ✅ **Elementtien kokoihin:** "Mikä on todellinen elementtikorkeus lattiatasosta yläpohjaan?" (vaikuttaa elementtityyppeihin)
+- ✅ **Elementtien sijaintiin:** "Mikä on HVS-seinän tarkka sijainti millimetreinä?" (vaikuttaa US-elementtien jakoon)
+- ✅ **Ristikoiden määriin/tyyppeihin:** "Onko kattoristikkojen k-jako 900mm?" (vaikuttaa ristikoiden määrään)
+- ✅ **Aukkojen määriin:** "Onko kaikissa kerroksissa samat ikkunamäärät?" (vaikuttaa elementtien aukkojen laskentaan)
+- ✅ **Eristysvaatimuksiin:** "Tarvitaanko erityistä eristysratkaisua?" (vaikuttaa US-elementtien tyyppeihin)
+
+### ÄLÄ kysy kysymyksiä, jotka eivät vaikuta määrälaskentaan:
+- ❌ Yleisiä kysymyksiä rakennuksen käyttötarkoituksesta (jos se ei vaikuta elementtityyppeihin)
+- ❌ Kysymyksiä, jotka eivät vaikuta elementtien määriin, kokoihin tai tyyppeihin
+- ❌ Kysymyksiä, jotka eivät vaikuta hinnoitteluun
+- ❌ Kysymyksiä, jotka liittyvät asiakkaan mieltymyksiin tai suunnitteluun (ei määrälaskentaan)
+
+**Esimerkkejä hyödyllisistä kysymyksistä:**
+- "Mikä on HVS-seinän tarkka sijainti millimetreinä?" → Vaikuttaa US-elementtien jakoon
+- "Mikä on todellinen elementtikorkeus lattiatasosta yläpohjaan?" → Vaikuttaa elementtityyppeihin
+- "Onko kattoristikkojen k-jako 900mm?" → Vaikuttaa ristikoiden määrään
+- "Muuttuuko sisäkatto vinoksi jossakin kohdassa?" → Vaikuttaa ristikoiden tyyppeihin
+- "Onko väliseinissä erityisvaatimuksia (ääni, palo, kosteus)?" → Vaikuttaa väliseinien tyyppeihin
 
 ---
 

@@ -255,9 +255,22 @@ Palauta vastaus JSON-muodossa seuraavalla rakenteella:
   ]
 }
 
-Jos tarvitset lisätietoja tarkempaa analyysiä varten, lisää 1-3 kysymystä "questions"-kenttään. 
+**TÄRKEÄÄ - KYSYMYKSET:**
+Kysy kysymyksiä VAIN jos ne vaikuttavat suoraan määrälaskentaan tai tarjouksen laskemiseen. Älä kysy:
+- Yleisiä kysymyksiä rakennuksen käyttötarkoituksesta (jos se ei vaikuta elementtityyppeihin)
+- Kysymyksiä, jotka eivät vaikuta elementtien määriin, kokoihin tai tyyppeihin
+- Kysymyksiä, jotka eivät vaikuta hinnoitteluun
+
+Kysy kysymyksiä VAIN jos ne liittyvät:
+- Elementtien määriin (esim. "Kuinka monta kerrosta rakennuksessa on?")
+- Elementtien kokoihin (esim. "Mikä on rakennuksen korkeus?")
+- Elementtien tyyppeihin (esim. "Käytetäänkö erityistä eristysratkaisua?")
+- Ristikoiden jännevälien tai tyyppien määrittämiseen
+- Aukkojen määriin tai kokoihin, jotka vaikuttavat elementtien laskentaan
+
+Jos tarvitset lisätietoja tarkempaa määrälaskentaa varten, lisää 1-3 kysymystä "questions"-kenttään. 
 Kussakin kysymyksessä anna 3 vaihtoehtoa (a, b, c). 
-Jos sinulla on tarpeeksi tietoa analysoida piirustukset, jätä "questions" tyhjäksi taulukoksi.
+Jos sinulla on tarpeeksi tietoa analysoida piirustukset ja laskea määrät, jätä "questions" tyhjäksi taulukoksi.
 
 Ole tarkka mitoissa ja anna realistisia määriä.`;
 
