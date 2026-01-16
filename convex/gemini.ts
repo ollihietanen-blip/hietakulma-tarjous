@@ -2,7 +2,7 @@ import { action } from "./_generated/server";
 import { v } from "convex/values";
 
 /**
- * Server-side Gemini 3.0 Pro API integration
+ * Server-side Gemini 3 Pro Preview API integration
  * This keeps the API key secure on the server
  */
 
@@ -31,7 +31,7 @@ interface GeminiResponse {
 }
 
 /**
- * Call Gemini 3.0 Pro API with text prompt
+ * Call Gemini 3 Pro Preview API with text prompt
  */
 export const generateText = action({
   args: {
@@ -43,7 +43,7 @@ export const generateText = action({
       throw new Error("GEMINI_API_KEY ei ole määritelty Convex-ympäristössä. Aseta se Convex Dashboardissa.");
     }
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-pro:generateContent?key=${apiKey}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`;
     
     const requestBody: GeminiRequest = {
       contents: [
@@ -82,7 +82,7 @@ export const generateText = action({
 });
 
 /**
- * Call Gemini 3.0 Pro API with images and text prompt
+ * Call Gemini 3 Pro Preview API with images and text prompt
  */
 export const generateWithImages = action({
   args: {
@@ -98,7 +98,7 @@ export const generateWithImages = action({
       throw new Error("GEMINI_API_KEY ei ole määritelty Convex-ympäristössä. Aseta se Convex Dashboardissa.");
     }
 
-    // Gemini 3.0 Pro supports multiple images per request (up to 16)
+    // Gemini 3 Pro Preview supports multiple images per request (up to 16)
     // Supported formats: PNG, JPG, GIF, WebP, HEIC, HEIF
     const imagesToUse = args.images.slice(0, 16);
 
@@ -110,7 +110,7 @@ export const generateWithImages = action({
       }
     }
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-pro:generateContent?key=${apiKey}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`;
     
     const parts: Array<GeminiPart> = [
       { text: args.prompt },

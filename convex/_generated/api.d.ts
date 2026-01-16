@@ -15,6 +15,7 @@ import type * as gemini from "../gemini.js";
 import type * as messages from "../messages.js";
 import type * as pricingTemplates from "../pricingTemplates.js";
 import type * as quotations from "../quotations.js";
+import type * as thingService from "../thingService.js";
 import type * as users from "../users.js";
 
 import type {
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   messages: typeof messages;
   pricingTemplates: typeof pricingTemplates;
   quotations: typeof quotations;
+  thingService: typeof thingService;
   users: typeof users;
 }>;
 
