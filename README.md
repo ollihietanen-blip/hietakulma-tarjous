@@ -15,6 +15,6 @@ View your app in AI Studio: https://ai.studio/apps/drive/1WX2ae46b9k5mxNc9zL81BP
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. Set the `CLAUDE_API_KEY` in Convex environment variables (see [CLAUDE_API_SETUP.md](CLAUDE_API_SETUP.md))
 3. Run the app:
    `npm run dev`

@@ -3,6 +3,9 @@ import { useQuotation } from '../../context/QuotationContext';
 import { CostEntry, CostEntryCategory } from '../../types';
 import { Plus, Trash2, TrendingUp, AlertTriangle, CheckCircle, Calculator, PieChart, List, BarChart3, Box, Grid, Upload, FileText, X, Loader } from 'lucide-react';
 import Header from '../Layout/Header';
+import { useAction } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { isConvexConfigured } from '../../lib/convexClient';
 
 interface InvoiceAnalysis {
   supplier?: string;
@@ -26,6 +29,7 @@ const CostTrackingView: React.FC = () => {
   const [invoiceAnalysis, setInvoiceAnalysis] = useState<InvoiceAnalysis | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const generateWithImages = isConvexConfigured ? useAction(api.gemini.generateWithImages) : null;
   
   // New Entry State
   const [newEntry, setNewEntry] = useState<Partial<CostEntry>>({
@@ -149,19 +153,17 @@ const CostTrackingView: React.FC = () => {
     setInvoiceAnalysis(null);
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY || '';
-      if (!apiKey) {
-        throw new Error('GEMINI_API_KEY ei ole määritelty. Tarkista .env.local tiedosto.');
-      }
-
       // Convert image to base64
-      let imageData: string;
+      let imageData: { mimeType: string; base64Data: string };
       if (file.type.startsWith('image/')) {
-        imageData = await new Promise<string>((resolve, reject) => {
+        imageData = await new Promise<{ mimeType: string; base64Data: string }>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => {
             const base64 = (reader.result as string).split(',')[1];
-            resolve(base64);
+            resolve({
+              mimeType: file.type,
+              base64Data: base64
+            });
           };
           reader.onerror = reject;
           reader.readAsDataURL(file);
@@ -170,7 +172,7 @@ const CostTrackingView: React.FC = () => {
         throw new Error('PDF-tiedostot eivät ole vielä tuettuja. Käytä kuvatiedostoa.');
       }
 
-      // Prepare prompt for Gemini
+      // Prepare prompt for Claude
       const prompt = `Analysoi tämä lasku ja palauta JSON-muodossa seuraavat tiedot:
 {
   "supplier": "Toimittajan nimi",
@@ -198,39 +200,17 @@ Kategorisoi lasku seuraavasti:
 
 Palauta VAIN JSON-objekti, ei muuta tekstiä.`;
 
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-      const response = await fetch(
-        apiUrl,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  { text: prompt },
-                  {
-                    inline_data: {
-                      mime_type: file.type,
-                      data: imageData
-                    }
-                  }
-                ]
-              }
-            ]
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`API-virhe: ${response.status} - ${errorData}`);
+      // Call Claude API via Convex (server-side, secure)
+      if (!generateWithImages) {
+        throw new Error('Convex ei ole konfiguroitu. Tarkista että VITE_CONVEX_URL on asetettu .env.local tiedostossa.');
       }
 
-      const data = await response.json();
-      const text = data.candidates[0].content.parts[0].text;
+      const result = await generateWithImages({
+        prompt: prompt,
+        images: [imageData]
+      });
+
+      const text = result.text;
       
       // Extract JSON from response (might be wrapped in markdown code blocks)
       let jsonText = text.trim();

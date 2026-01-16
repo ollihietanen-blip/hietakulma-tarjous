@@ -1,7 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
 import Breadcrumb from '../Layout/Breadcrumb';
 import { ArrowRight, Ruler, Home, Box, Layers, PenTool, CheckCircle, Upload, FileText, X, Sparkles, Loader2, AlertCircle, Plus } from 'lucide-react';
+import { useAction } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { isConvexConfigured } from '../../lib/convexClient';
 
 interface ElementCalculatorViewProps {
   onComplete: () => void;
@@ -12,6 +15,15 @@ interface UploadedDocument {
   file: File;
   category: 'pohjapiirustus' | 'julkisivupiirustus' | 'leikkauspiirustus' | 'muu';
   preview?: string;
+}
+
+interface AIQuestion {
+  question: string;
+  options: {
+    a: string;
+    b: string;
+    c: string;
+  };
 }
 
 interface AIAnalysisResult {
@@ -34,11 +46,13 @@ interface AIAnalysisResult {
     floors?: number;
   };
   notes: string[];
+  questions?: AIQuestion[]; // Kysymykset A/B/C -vaihtoehdoilla
 }
 
 const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplete }) => {
-  const { addElement, quotation } = useQuotation();
+  const { addElement, quotation, saveQuotation } = useQuotation();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const generateWithImages = isConvexConfigured ? useAction(api.gemini.generateWithImages) : null;
   
   // Opening type definition
   interface Opening {
@@ -68,11 +82,17 @@ const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplet
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  
+  // AI questions and answers
+  const [aiQuestions, setAiQuestions] = useState<AIQuestion[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
+  const [userAnswers, setUserAnswers] = useState<Record<number, 'a' | 'b' | 'c'>>({});
 
   // Selected items to transfer to quotation
   const [selectedItems, setSelectedItems] = useState({
     wallElements: true, // Default selected
   });
+
 
   // Calculations
   const perimeter = (dims.width + dims.length) * 2;
@@ -115,7 +135,7 @@ const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplet
     setUploadedDocs(prev => prev.map(doc => doc.id === id ? { ...doc, category } : doc));
   };
 
-  // AI Analysis with Gemini API
+  // AI Analysis with Claude API
   const analyzeDocuments = async () => {
     if (uploadedDocs.length === 0) {
       alert('Lataa ensin piirustukset analysoitavaksi');
@@ -126,21 +146,19 @@ const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplet
     setAnalysisResult(null);
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY || '';
-      if (!apiKey) {
-        throw new Error('GEMINI_API_KEY ei ole määritelty. Tarkista .env.local tiedosto.');
-      }
-
       // Convert images to base64
       const imagePromises = uploadedDocs
         .filter(doc => doc.file.type.startsWith('image/'))
-        .slice(0, 3) // Gemini supports max 3 images per request
+        .slice(0, 3) // Claude supports max 3 images per request
         .map(doc => {
-          return new Promise<string>((resolve, reject) => {
+          return new Promise<{ mimeType: string; base64Data: string }>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => {
               const base64 = (reader.result as string).split(',')[1];
-              resolve(base64);
+              resolve({
+                mimeType: doc.file.type,
+                base64Data: base64
+              });
             };
             reader.onerror = reject;
             reader.readAsDataURL(doc.file);
@@ -169,8 +187,22 @@ const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplet
         }
       }
 
-      // Prepare prompt for Gemini
-      const prompt = `${instruction}
+      // Add user answers to context if available
+      let contextInfo = '';
+      if (Object.keys(userAnswers).length > 0 && aiQuestions.length > 0) {
+        contextInfo = '\n\nLisätietoa käyttäjältä:\n';
+        Object.entries(userAnswers).forEach(([index, answer]) => {
+          const questionIndex = parseInt(index);
+          if (aiQuestions[questionIndex]) {
+            const question = aiQuestions[questionIndex];
+            const selectedOption = question.options[answer];
+            contextInfo += `- Kysymys: ${question.question}\n  Vastaus: ${answer.toUpperCase()}) ${selectedOption}\n`;
+          }
+        });
+      }
+
+      // Prepare prompt for Claude
+      const prompt = `${instruction}${contextInfo}
 
 Palauta vastaus JSON-muodossa seuraavalla rakenteella:
 {
@@ -200,45 +232,36 @@ Palauta vastaus JSON-muodossa seuraavalla rakenteella:
     "height": korkeus metriä,
     "floors": kerrokset
   },
-  "notes": ["huomio1", "huomio2"]
+  "notes": ["huomio1", "huomio2"],
+  "questions": [
+    {
+      "question": "Kysymys johon tarvitset vastauksen parantaaksesi analyysiä",
+      "options": {
+        "a": "Vaihtoehto A",
+        "b": "Vaihtoehto B",
+        "c": "Vaihtoehto C"
+      }
+    }
+  ]
 }
+
+Jos tarvitset lisätietoja tarkempaa analyysiä varten, lisää 1-3 kysymystä "questions"-kenttään. 
+Kussakin kysymyksessä anna 3 vaihtoehtoa (a, b, c). 
+Jos sinulla on tarpeeksi tietoa analysoida piirustukset, jätä "questions" tyhjäksi taulukoksi.
 
 Ole tarkka mitoissa ja anna realistisia määriä.`;
 
-      // Call Gemini API
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-      const response = await fetch(
-        apiUrl,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  { text: prompt },
-                  ...imageData.map(base64 => ({
-                    inline_data: {
-                      mime_type: 'image/png',
-                      data: base64
-                    }
-                  }))
-                ]
-              }
-            ]
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`API-virhe: ${response.status} - ${errorData}`);
+      // Call Claude API via Convex (server-side, secure)
+      if (!generateWithImages) {
+        throw new Error('Convex ei ole konfiguroitu. Tarkista että VITE_CONVEX_URL on asetettu .env.local tiedostossa.');
       }
 
-      const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const apiResult = await generateWithImages({
+        prompt: prompt,
+        images: imageData
+      });
+
+      const text = apiResult.text;
 
       // Parse JSON from response (might be wrapped in markdown)
       let jsonText = text;
@@ -247,20 +270,34 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
         jsonText = jsonMatch[1];
       }
 
-      const result: AIAnalysisResult = JSON.parse(jsonText);
+      const analysisResult: AIAnalysisResult = JSON.parse(jsonText);
+
+      // Check if AI has questions
+      const questions = analysisResult.questions || [];
+      
+      if (questions.length > 0) {
+        setAiQuestions(questions);
+        setCurrentQuestionIndex(0);
+        // Keep existing answers if re-analyzing
+      } else {
+        // Tyhjennä kysymykset jos uudessa analyysissä ei ole kysymyksiä
+        setAiQuestions([]);
+        setCurrentQuestionIndex(0);
+        setUserAnswers({});
+      }
 
       // Update dimensions if provided
-      if (result.dimensions) {
+      if (analysisResult.dimensions) {
         setDims(prev => ({
           ...prev,
-          width: result.dimensions?.width || prev.width,
-          length: result.dimensions?.length || prev.length,
-          height: result.dimensions?.height || prev.height,
-          floors: result.dimensions?.floors || prev.floors,
+          width: analysisResult.dimensions?.width || prev.width,
+          length: analysisResult.dimensions?.length || prev.length,
+          height: analysisResult.dimensions?.height || prev.height,
+          floors: analysisResult.dimensions?.floors || prev.floors,
         }));
       }
 
-      setAnalysisResult(result);
+      setAnalysisResult(analysisResult);
     } catch (error) {
       console.error('Analyysivirhe:', error);
       alert(`Analyysivirhe: ${error instanceof Error ? error.message : 'Tuntematon virhe'}`);
@@ -293,8 +330,40 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
       addedCount += element.quantity;
     });
 
+    // Päivitä AI-ohjetta kohteen laskemisen jälkeen
+    updateAIInstructionAfterCalculation(addedCount);
+
     alert(`${addedCount} elementtiä lisätty tarjoukseen AI-ehdotusten perusteella!`);
     onComplete();
+  };
+
+  // Päivitä AI-ohjetta kohteen laskemisen jälkeen
+  const updateAIInstructionAfterCalculation = (elementCount: number) => {
+    try {
+      const currentInstruction = quotation.aiAnalysisInstruction || {
+        version: 1,
+        lastUpdated: new Date(),
+        instructionText: '',
+        examples: []
+      };
+
+      // Luo uusi ohje joka sisältää oppimisen
+      const learningNote = `\n\nHuomio viimeisimmästä analyysistä:\n- Löydettiin ${elementCount} elementtiä\n- Rakennustyyppi: ${quotation.project.buildingType}\n- Mitat: ${dims.width}m x ${dims.length}m, ${dims.floors} kerrosta`;
+
+      const updatedInstruction = {
+        ...currentInstruction,
+        version: currentInstruction.version + 1,
+        lastUpdated: new Date(),
+        instructionText: currentInstruction.instructionText + learningNote
+      };
+
+      // Tallenna päivitetty ohje (käytetään saveQuotation:ia joka päivittää myös ohjeen)
+      // Tämä vaatii QuotationContextissa funktion päivittää AI-ohjetta
+      // Nyt tallennetaan väliaikaisesti quotation-olioon
+      saveQuotation();
+    } catch (error) {
+      console.warn('AI-ohjeen päivitys epäonnistui:', error);
+    }
   };
 
   const handleApply = () => {
@@ -327,6 +396,9 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
         }
 
         if (addedCount > 0) {
+            // Päivitä AI-ohjetta kohteen laskemisen jälkeen
+            updateAIInstructionAfterCalculation(addedCount);
+            
             alert(`${addedCount}kpl elementtejä lisätty onnistuneesti tarjoukseen!`);
             onComplete();
         } else {
@@ -457,6 +529,162 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
                           </>
                         )}
                       </button>
+
+                      {/* AI Questions & Answers - One question at a time with A/B/C buttons */}
+                      {aiQuestions.length > 0 && currentQuestionIndex < aiQuestions.length && (
+                        <div className="mt-4 p-6 bg-amber-50 border-2 border-amber-300 rounded-xl shadow-lg">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="font-bold text-amber-900 flex items-center gap-2">
+                              <Sparkles size={18} /> Tekoälyn kysymys {currentQuestionIndex + 1}/{aiQuestions.length}
+                            </h4>
+                            <button
+                              onClick={() => {
+                                setAiQuestions([]);
+                                setCurrentQuestionIndex(0);
+                                setUserAnswers({});
+                              }}
+                              className="text-amber-700 hover:text-amber-900 transition-colors"
+                              title="Ohita kysymykset"
+                            >
+                              <X size={18} />
+                            </button>
+                          </div>
+                          
+                          <p className="text-sm text-amber-800 mb-6">
+                            Tekoäly tarvitsee lisätietoja tarkempaa analyysiä varten. Valitse vastaus:
+                          </p>
+                          
+                          <div className="bg-white p-5 rounded-lg border border-amber-200 mb-6">
+                            <p className="font-semibold text-slate-900 mb-6 text-lg">
+                              {aiQuestions[currentQuestionIndex].question}
+                            </p>
+                            
+                            <div className="space-y-3">
+                              {/* Option A */}
+                              <button
+                                onClick={() => {
+                                  setUserAnswers(prev => ({ ...prev, [currentQuestionIndex]: 'a' }));
+                                  // Auto-advance to next question after a short delay
+                                  setTimeout(() => {
+                                    if (currentQuestionIndex < aiQuestions.length - 1) {
+                                      setCurrentQuestionIndex(prev => prev + 1);
+                                    }
+                                  }, 300);
+                                }}
+                                className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                                  userAnswers[currentQuestionIndex] === 'a'
+                                    ? 'bg-blue-500 border-blue-600 text-white shadow-md'
+                                    : 'bg-slate-50 border-slate-300 hover:border-blue-400 hover:bg-blue-50 text-slate-900'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className={`font-bold text-lg ${userAnswers[currentQuestionIndex] === 'a' ? 'text-white' : 'text-blue-600'}`}>
+                                    A
+                                  </span>
+                                  <span className="flex-1">{aiQuestions[currentQuestionIndex].options.a}</span>
+                                  {userAnswers[currentQuestionIndex] === 'a' && (
+                                    <CheckCircle size={20} className="text-white" />
+                                  )}
+                                </div>
+                              </button>
+
+                              {/* Option B */}
+                              <button
+                                onClick={() => {
+                                  setUserAnswers(prev => ({ ...prev, [currentQuestionIndex]: 'b' }));
+                                  setTimeout(() => {
+                                    if (currentQuestionIndex < aiQuestions.length - 1) {
+                                      setCurrentQuestionIndex(prev => prev + 1);
+                                    }
+                                  }, 300);
+                                }}
+                                className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                                  userAnswers[currentQuestionIndex] === 'b'
+                                    ? 'bg-blue-500 border-blue-600 text-white shadow-md'
+                                    : 'bg-slate-50 border-slate-300 hover:border-blue-400 hover:bg-blue-50 text-slate-900'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className={`font-bold text-lg ${userAnswers[currentQuestionIndex] === 'b' ? 'text-white' : 'text-blue-600'}`}>
+                                    B
+                                  </span>
+                                  <span className="flex-1">{aiQuestions[currentQuestionIndex].options.b}</span>
+                                  {userAnswers[currentQuestionIndex] === 'b' && (
+                                    <CheckCircle size={20} className="text-white" />
+                                  )}
+                                </div>
+                              </button>
+
+                              {/* Option C */}
+                              <button
+                                onClick={() => {
+                                  setUserAnswers(prev => ({ ...prev, [currentQuestionIndex]: 'c' }));
+                                  setTimeout(() => {
+                                    if (currentQuestionIndex < aiQuestions.length - 1) {
+                                      setCurrentQuestionIndex(prev => prev + 1);
+                                    }
+                                  }, 300);
+                                }}
+                                className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                                  userAnswers[currentQuestionIndex] === 'c'
+                                    ? 'bg-blue-500 border-blue-600 text-white shadow-md'
+                                    : 'bg-slate-50 border-slate-300 hover:border-blue-400 hover:bg-blue-50 text-slate-900'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className={`font-bold text-lg ${userAnswers[currentQuestionIndex] === 'c' ? 'text-white' : 'text-blue-600'}`}>
+                                    C
+                                  </span>
+                                  <span className="flex-1">{aiQuestions[currentQuestionIndex].options.c}</span>
+                                  {userAnswers[currentQuestionIndex] === 'c' && (
+                                    <CheckCircle size={20} className="text-white" />
+                                  )}
+                                </div>
+                              </button>
+                            </div>
+
+                            {/* Navigation buttons */}
+                            <div className="flex items-center justify-between mt-6 pt-4 border-t border-amber-200">
+                              <button
+                                onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
+                                disabled={currentQuestionIndex === 0}
+                                className="px-4 py-2 text-sm font-medium text-amber-700 bg-white border border-amber-300 rounded-lg hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                              >
+                                ← Edellinen
+                              </button>
+                              
+                              <span className="text-sm text-amber-700">
+                                {Object.keys(userAnswers).length} / {aiQuestions.length} vastattu
+                              </span>
+                              
+                              <button
+                                onClick={() => {
+                                  if (currentQuestionIndex < aiQuestions.length - 1) {
+                                    setCurrentQuestionIndex(prev => prev + 1);
+                                  }
+                                }}
+                                disabled={currentQuestionIndex >= aiQuestions.length - 1}
+                                className="px-4 py-2 text-sm font-medium text-amber-700 bg-white border border-amber-300 rounded-lg hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                              >
+                                Seuraava →
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Analyze button - show when all questions answered */}
+                          {Object.keys(userAnswers).length === aiQuestions.length && (
+                            <button
+                              onClick={() => {
+                                // Analysoi uudelleen käyttäjän vastausten kanssa
+                                analyzeDocuments();
+                              }}
+                              className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
+                            >
+                              <Sparkles size={18} /> Analysoi uudelleen vastausten kanssa
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 

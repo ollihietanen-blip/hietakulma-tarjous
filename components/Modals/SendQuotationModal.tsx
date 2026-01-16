@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Send, Sparkles, RefreshCw, User, Building2, FileText, AlertCircle } from 'lucide-react';
 import { Quotation, QuotationVersion } from '../../types';
+import { useAction } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { isConvexConfigured } from '../../lib/convexClient';
 
 interface SendQuotationModalProps {
   isOpen: boolean;
@@ -24,6 +27,7 @@ const SendQuotationModal: React.FC<SendQuotationModalProps> = ({
   const [selectedTone, setSelectedTone] = useState<'professional' | 'friendly' | 'formal'>('professional');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [changes, setChanges] = useState<string>('');
+  const generateText = isConvexConfigured ? useAction(api.gemini.generateText) : null;
 
   // Check if this is an updated quotation
   const isUpdate = previousVersion !== undefined && previousVersion !== null;
@@ -42,9 +46,6 @@ const SendQuotationModal: React.FC<SendQuotationModalProps> = ({
     if (!previousVersion || !version) return;
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY || '';
-      if (!apiKey) return;
-
       const oldPrice = previousVersion.quotation.pricing?.totalWithVat || 0;
       const newPrice = version.quotation.pricing?.totalWithVat || 0;
       const oldElements = previousVersion.quotation.elements?.reduce((sum: number, s: any) => sum + (s.items?.length || 0), 0) || 0;
@@ -66,20 +67,15 @@ UUSI VERSIO:
 
 Listaa selkeästi mitä on muuttunut (hinta, määrät, jne.). Käytä suomea. Ole ytimekäs ja selkeä.`;
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }]
-          })
-        }
-      );
+      // Call Claude API via Convex (server-side, secure)
+      if (!generateText) {
+        console.warn('Convex ei ole konfiguroitu. Muutosten tunnistus ei ole käytettävissä.');
+        return;
+      }
 
-      const data = await response.json();
-      if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-        setChanges(data.candidates[0].content.parts[0].text);
+      const result = await generateText({ prompt });
+      if (result.text) {
+        setChanges(result.text);
       }
     } catch (error) {
       console.error('Error detecting changes:', error);
@@ -89,18 +85,6 @@ Listaa selkeästi mitä on muuttunut (hinta, määrät, jne.). Käytä suomea. O
   const generateSuggestions = async () => {
     setIsGenerating(true);
     try {
-      const apiKey = process.env.GEMINI_API_KEY || '';
-      if (!apiKey) {
-        // Fallback suggestions without AI
-        setSuggestions([
-          `Hei ${quotation.customer.contactPerson}!`,
-          `Lähetämme tämän tarjouksen projektille ${quotation.project.name}.`,
-          `Toivomme, että tarjous vastaa odotuksianne.`
-        ]);
-        setIsGenerating(false);
-        return;
-      }
-
       const toneDescriptions = {
         professional: 'ammattimainen mutta ystävällinen',
         friendly: 'ystävällinen ja lähestyttävä',
@@ -131,21 +115,21 @@ Anna 3-5 lyhyttä, henkilökohtaista viestiehdotusta (max 2 lausetta per ehdotus
 
 Palauta vain viestiehdotukset, yksi per rivi, ilman numeroita tai erikoismerkintöjä.`;
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }]
-          })
-        }
-      );
+      // Call Claude API via Convex (server-side, secure)
+      if (!generateText) {
+        // Fallback suggestions without AI
+        setSuggestions([
+          `Hei ${quotation.customer.contactPerson}!`,
+          `Lähetämme tämän tarjouksen projektille ${quotation.project.name}.`,
+          `Toivomme, että tarjous vastaa odotuksianne.`
+        ]);
+        setIsGenerating(false);
+        return;
+      }
 
-      const data = await response.json();
-      if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-        const text = data.candidates[0].content.parts[0].text;
-        const lines = text.split('\n').filter(line => line.trim() && !line.match(/^\d+[\.\)]/));
+      const result = await generateText({ prompt });
+      if (result.text) {
+        const lines = result.text.split('\n').filter(line => line.trim() && !line.match(/^\d+[\.\)]/));
         setSuggestions(lines.slice(0, 5));
       } else {
         // Fallback

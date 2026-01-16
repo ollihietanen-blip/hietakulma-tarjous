@@ -40,10 +40,12 @@ Jos `npx convex dev` ei toimi, voit:
 
 1. **Tarkista .env.local:**
    ```
-   GEMINI_API_KEY=AIzaSyABysWWeP3e75YO3CF5nJguGmL3UOghRCE
    VITE_CONVEX_URL=https://original-aardvark-584.convex.cloud
    CONVEX_DEPLOYMENT_KEY=your-key-here
    ```
+   
+   **HUOM:** Claude API-avain asetetaan Convex-ympäristöön, ei .env.local tiedostoon.
+   Katso ohjeet: [CLAUDE_API_SETUP.md](CLAUDE_API_SETUP.md)
 
 2. **Testaa sovellus:**
    ```bash

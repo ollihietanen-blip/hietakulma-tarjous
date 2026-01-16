@@ -50,9 +50,11 @@ Kun Convex on alustettu, seuraavat taulut luodaan automaattisesti:
 
 Kun Convex on alustettu, `.env.local` sisältää:
 ```
-GEMINI_API_KEY=AIzaSyABysWWeP3e75YO3CF5nJguGmL3UOghRCE
 VITE_CONVEX_URL=https://your-project-name.convex.cloud
 ```
+
+**TÄRKEÄÄ: Claude API-avain asetetaan nyt Convex-ympäristöön, ei .env.local tiedostoon!**
+Katso ohjeet: [CLAUDE_API_SETUP.md](CLAUDE_API_SETUP.md)
 
 Sovellus käyttää tätä URL:ia automaattisesti.
 

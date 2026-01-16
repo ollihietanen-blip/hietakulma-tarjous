@@ -68,9 +68,11 @@ Kun olet lisännyt `VITE_CONVEX_URL` `.env.local` tiedostoon:
 
 1. **Tarkista .env.local:**
    ```
-   GEMINI_API_KEY=AIzaSyABysWWeP3e75YO3CF5nJguGmL3UOghRCE
    VITE_CONVEX_URL=https://your-project.convex.cloud
    ```
+   
+   **HUOM:** Claude API-avain asetetaan Convex-ympäristöön, ei .env.local tiedostoon.
+   Katso ohjeet: [CLAUDE_API_SETUP.md](CLAUDE_API_SETUP.md)
 
 2. **Synkronoi skeema:**
    ```bash
