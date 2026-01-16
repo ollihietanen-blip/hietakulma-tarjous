@@ -70,9 +70,12 @@ const ProductionDashboardView: React.FC = () => {
   }, []);
 
   // Fetch sales projects from Convex (accepted quotations)
-  const salesProjects = useQuery(api?.quotations?.listQuotations, {
-    status: 'accepted'
-  }) as Doc<"quotations">[] | undefined;
+  const salesProjects = useQuery(
+    api?.quotations?.listQuotations ? api.quotations.listQuotations : null
+  ) as Doc<"quotations">[] | undefined;
+  
+  // Filter accepted quotations
+  const acceptedSalesProjects = salesProjects?.filter(q => q.status === 'accepted') || [];
 
   const getStatusColor = (status: string) => {
     switch(status) {
@@ -118,7 +121,7 @@ const ProductionDashboardView: React.FC = () => {
     projectId: p.number,
   }));
 
-  const allSalesProjects: Array<ProductionProject & { source: 'sales'; salesData?: SalesProject }> = (salesProjects || []).map(q => ({
+  const allSalesProjects: Array<ProductionProject & { source: 'sales'; salesData?: SalesProject }> = acceptedSalesProjects.map(q => ({
     number: q.project.number,
     name: q.project.name,
     address: q.project.address,

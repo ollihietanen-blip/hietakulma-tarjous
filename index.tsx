@@ -5,9 +5,12 @@ import { convex, isConvexConfigured } from './lib/convexClient';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
 
-const rootElement = document.getElementById('root');
+let rootElement = document.getElementById('root');
 if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
+  // Create root element if it doesn't exist (shouldn't happen, but safety check)
+  rootElement = document.createElement('div');
+  rootElement.id = 'root';
+  document.body.appendChild(rootElement);
 }
 
 const root = ReactDOM.createRoot(rootElement);
