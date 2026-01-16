@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
-import { LayoutDashboard, Calculator, FileText, Users, LogOut, ChevronRight, KanbanSquare, X, PieChart, RefreshCw, FolderCog, Triangle, Box, ChevronDown, ListTree, Calendar, FileSignature, UserCog } from 'lucide-react';
+import { LayoutDashboard, Calculator, FileText, Users, LogOut, ChevronRight, KanbanSquare, X, PieChart, RefreshCw, FolderCog, Triangle, Box, ChevronDown, ListTree, Calendar, FileSignature, UserCog, Factory } from 'lucide-react';
 import { UserRole } from '../../App';
-import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api.js';
 import { isConvexConfigured } from '../../lib/convexClient';
+import { useQuery } from '../../lib/convexHooks';
 import { Id } from '../../convex/_generated/dataModel';
 
 interface SidebarProps {
@@ -29,7 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
   });
   
   // Fetch all users from database
-  const users = isConvexConfigured ? useQuery(api.users.listUsers) : null;
+  const users = useQuery(api?.users?.listUsers);
   
   // Find current user
   const currentUser = users?.find(u => u._id === currentUserId) || users?.find(u => u.active) || null;
@@ -85,6 +85,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
     if (role === 'toimitusjohtaja' || role === 'myyntipäällikkö') {
       return 'manager';
     }
+    if (role === 'tehtaanjohtaja') {
+      return 'manager'; // Factory manager also has manager-level access
+    }
     return 'sales';
   };
   
@@ -94,6 +97,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
       'toimitusjohtaja': 'Toimitusjohtaja',
       'myyntipäällikkö': 'Myyntipäällikkö',
       'myyntiedustaja': 'Myyntiedustaja',
+      'tehtaanjohtaja': 'Tehtaanjohtaja',
       'muu': 'Käyttäjä'
     };
     return roleMap[role] || 'Käyttäjä';
@@ -120,6 +124,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
 
   // Check if current user is manager (toimitusjohtaja or myyntipäällikkö)
   const isManager = currentUser && (currentUser.role === 'toimitusjohtaja' || currentUser.role === 'myyntipäällikkö');
+  const isFactoryManager = currentUser && currentUser.role === 'tehtaanjohtaja';
 
   const menuSections = [
     {
@@ -128,6 +133,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
         { id: 'dashboard', label: 'Etusivu', icon: <LayoutDashboard size={20} /> },
         { id: 'pipeline', label: 'Myyntiputki', icon: <KanbanSquare size={20} /> },
         { id: 'calendar', label: 'Kalenteri', icon: <Calendar size={20} /> },
+        ...(isFactoryManager ? [{ id: 'production', label: 'Tuotannon seuranta', icon: <Factory size={20} /> }] : []),
         ...(isManager ? [{ id: 'users_management', label: 'Käyttäjähallinta', icon: <UserCog size={20} /> }] : []),
       ],
     },
@@ -255,7 +261,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
             <>
               <div className="flex items-center gap-3 mb-4">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold font-display text-lg
-                    ${getRoleFromUser(currentUser.role) === 'manager' ? 'bg-purple-500 text-white' : 'bg-hieta-sand text-hieta-black'}
+                    ${currentUser.role === 'toimitusjohtaja' ? 'bg-purple-500 text-white' :
+                      currentUser.role === 'myyntipäällikkö' ? 'bg-blue-500 text-white' :
+                      currentUser.role === 'tehtaanjohtaja' ? 'bg-green-500 text-white' :
+                      'bg-hieta-sand text-hieta-black'}
                 `}>
                   {getUserInitials(currentUser.name)}
                 </div>
@@ -288,6 +297,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
                               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                                 user.role === 'toimitusjohtaja' ? 'bg-purple-500 text-white' :
                                 user.role === 'myyntipäällikkö' ? 'bg-blue-500 text-white' :
+                                user.role === 'tehtaanjohtaja' ? 'bg-green-500 text-white' :
                                 'bg-hieta-sand text-hieta-black'
                               }`}>
                                 {getUserInitials(user.name)}

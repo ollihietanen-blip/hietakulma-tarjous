@@ -3,9 +3,9 @@ import { useQuotation } from '../../context/QuotationContext';
 import { CostEntry, CostEntryCategory } from '../../types';
 import { Plus, Trash2, TrendingUp, AlertTriangle, CheckCircle, Calculator, PieChart, List, BarChart3, Box, Grid, Upload, FileText, X, Loader } from 'lucide-react';
 import Header from '../Layout/Header';
-import { useAction } from 'convex/react';
 import { api } from '../../convex/_generated/api.js';
 import { isConvexConfigured } from '../../lib/convexClient';
+import { useAction } from '../../lib/convexHooks';
 
 interface InvoiceAnalysis {
   supplier?: string;
@@ -29,7 +29,7 @@ const CostTrackingView: React.FC = () => {
   const [invoiceAnalysis, setInvoiceAnalysis] = useState<InvoiceAnalysis | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const generateWithImages = isConvexConfigured ? useAction(api.gemini.generateWithImages) : null;
+  const generateWithImages = useAction(api?.gemini?.generateWithImages);
   
   // New Entry State
   const [newEntry, setNewEntry] = useState<Partial<CostEntry>>({
@@ -212,13 +212,53 @@ Palauta VAIN JSON-objekti, ei muuta tekstiä.`;
 
       const text = result.text;
       
-      // Extract JSON from response (might be wrapped in markdown code blocks)
+      // Extract JSON from response (might be wrapped in markdown or have extra text)
       let jsonText = text.trim();
-      if (jsonText.startsWith('```')) {
-        jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      
+      // First, try to extract JSON from markdown code blocks
+      const codeBlockMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (codeBlockMatch) {
+        jsonText = codeBlockMatch[1].trim();
       }
       
-      const analysis: InvoiceAnalysis = JSON.parse(jsonText);
+      // Remove markdown headers (lines starting with #)
+      jsonText = jsonText.split('\n')
+        .filter(line => !line.trim().startsWith('#'))
+        .join('\n');
+      
+      // Try to find JSON object boundaries ({ ... })
+      const firstBrace = jsonText.indexOf('{');
+      const lastBrace = jsonText.lastIndexOf('}');
+      
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        // Extract only the JSON object part
+        jsonText = jsonText.substring(firstBrace, lastBrace + 1);
+      }
+      
+      // Final cleanup
+      jsonText = jsonText.trim();
+      
+      // Validate that we have something that looks like JSON
+      if (!jsonText.startsWith('{') || !jsonText.endsWith('}')) {
+        throw new Error(`AI-vastaus ei sisällä kelvollista JSON-objektia. Vastaus alkaa: "${jsonText.substring(0, 100)}..."`);
+      }
+      
+      let analysis: InvoiceAnalysis;
+      try {
+        analysis = JSON.parse(jsonText);
+      } catch (parseError) {
+        // If parsing fails, try to extract JSON more aggressively
+        const jsonObjectMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonObjectMatch) {
+          try {
+            analysis = JSON.parse(jsonObjectMatch[0]);
+          } catch (retryError) {
+            throw new Error(`JSON-parsinta epäonnistui: ${parseError instanceof Error ? parseError.message : 'Tuntematon virhe'}. Vastaus: "${text.substring(0, 200)}..."`);
+          }
+        } else {
+          throw new Error(`JSON-parsinta epäonnistui: ${parseError instanceof Error ? parseError.message : 'Tuntematon virhe'}. Vastaus: "${text.substring(0, 200)}..."`);
+        }
+      }
       
       // Parse date if provided
       if (analysis.date && typeof analysis.date === 'string') {

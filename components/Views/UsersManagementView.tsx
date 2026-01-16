@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api.js';
 import { isConvexConfigured } from '../../lib/convexClient';
+import { useQuery, useMutation } from '../../lib/convexHooks';
 import { Id } from '../../convex/_generated/dataModel';
 import { Plus, Edit2, Trash2, Save, X, UserCheck, UserX } from 'lucide-react';
 
 const UsersManagementView: React.FC = () => {
-  const users = isConvexConfigured ? useQuery(api.users.listUsers) : [];
-  const createUser = isConvexConfigured ? useMutation(api.users.createUser) : null;
-  const updateUser = isConvexConfigured ? useMutation(api.users.updateUser) : null;
-  const deleteUser = isConvexConfigured ? useMutation(api.users.deleteUser) : null;
+  const users = useQuery(api?.users?.listUsers) || [];
+  const createUser = useMutation(api?.users?.createUser);
+  const updateUser = useMutation(api?.users?.updateUser);
+  const deleteUser = useMutation(api?.users?.deleteUser);
 
   const [editingId, setEditingId] = useState<Id<"users"> | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    role: 'myyntiedustaja' as 'toimitusjohtaja' | 'myyntipäällikkö' | 'myyntiedustaja' | 'muu',
+    role: 'myyntiedustaja' as 'toimitusjohtaja' | 'myyntipäällikkö' | 'myyntiedustaja' | 'asiakas' | 'muu',
     email: '',
     phone: '',
     active: true,
@@ -87,6 +87,8 @@ const UsersManagementView: React.FC = () => {
       'toimitusjohtaja': 'Toimitusjohtaja',
       'myyntipäällikkö': 'Myyntipäällikkö',
       'myyntiedustaja': 'Myyntiedustaja',
+      'tehtaanjohtaja': 'Tehtaanjohtaja',
+      'asiakas': 'Asiakas',
       'muu': 'Muu'
     };
     return roleMap[role] || role;
@@ -171,6 +173,8 @@ const UsersManagementView: React.FC = () => {
                   <option value="toimitusjohtaja">Toimitusjohtaja</option>
                   <option value="myyntipäällikkö">Myyntipäällikkö</option>
                   <option value="myyntiedustaja">Myyntiedustaja</option>
+                  <option value="tehtaanjohtaja">Tehtaanjohtaja</option>
+                  <option value="asiakas">Asiakas</option>
                   <option value="muu">Muu</option>
                 </select>
               </div>

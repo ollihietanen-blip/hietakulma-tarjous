@@ -13,10 +13,11 @@ import TrussCalculatorView from './components/Views/TrussCalculatorView';
 import CalendarView from './components/Views/CalendarView';
 import ContractView from './components/Views/ContractView';
 import UsersManagementView from './components/Views/UsersManagementView';
+import ProductionDashboardView from './components/Views/ProductionDashboardView';
 import { Menu } from 'lucide-react';
-import { useQuery } from 'convex/react';
 import { api } from './convex/_generated/api.js';
 import { isConvexConfigured } from './lib/convexClient';
+import { useQuery } from './lib/convexHooks';
 import { Id } from './convex/_generated/dataModel';
 
 // Added 'messages'
@@ -33,7 +34,7 @@ function App() {
     return stored as Id<"users"> | null;
   });
   
-  const users = isConvexConfigured ? useQuery(api.users.listUsers) : null;
+  const users = useQuery(api?.users?.listUsers);
   const currentUser = users?.find(u => u._id === currentUserId) || users?.find(u => u.active) || null;
   
   // Set first user as current if none selected
@@ -80,6 +81,8 @@ function App() {
   const userRole: UserRole = currentUser 
     ? (currentUser.role === 'toimitusjohtaja' || currentUser.role === 'myyntipäällikkö' ? 'manager' : 'sales')
     : 'sales';
+  
+  const isFactoryManager = currentUser?.role === 'tehtaanjohtaja';
 
   const projectViews = [
     'project_dashboard', 
@@ -192,6 +195,11 @@ function App() {
            {currentView === 'users_management' && (
                <div className="flex-1 bg-hieta-light">
                    <UsersManagementView />
+               </div>
+           )}
+           {currentView === 'production' && (
+               <div className="flex-1 bg-hieta-light">
+                   <ProductionDashboardView />
                </div>
            )}
         </div>

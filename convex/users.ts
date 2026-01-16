@@ -9,6 +9,7 @@ export const createUser = mutation({
       v.literal("toimitusjohtaja"),
       v.literal("myyntipäällikkö"),
       v.literal("myyntiedustaja"),
+      v.literal("asiakas"),
       v.literal("muu")
     ),
     email: v.optional(v.string()),
@@ -54,6 +55,7 @@ export const getUsersByRole = query({
       v.literal("toimitusjohtaja"),
       v.literal("myyntipäällikkö"),
       v.literal("myyntiedustaja"),
+      v.literal("asiakas"),
       v.literal("muu")
     ),
   },
@@ -83,6 +85,7 @@ export const updateUser = mutation({
         v.literal("toimitusjohtaja"),
         v.literal("myyntipäällikkö"),
         v.literal("myyntiedustaja"),
+        v.literal("asiakas"),
         v.literal("muu")
       )),
       email: v.optional(v.string()),
@@ -152,5 +155,32 @@ export const initializeDefaultUsers = mutation({
     }
     
     return results;
+  },
+});
+
+// Create first customer (John Doe)
+export const createFirstCustomer = mutation({
+  handler: async (ctx) => {
+    // Check if John Doe already exists
+    const existing = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("name"), "John Doe"))
+      .filter((q) => q.eq(q.field("role"), "asiakas"))
+      .first();
+    
+    if (existing) {
+      return { id: existing._id, created: false, message: "John Doe already exists" };
+    }
+    
+    const now = Date.now();
+    const userId = await ctx.db.insert("users", {
+      name: "John Doe",
+      role: "asiakas",
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+    
+    return { id: userId, created: true };
   },
 });

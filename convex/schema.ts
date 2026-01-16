@@ -267,6 +267,8 @@ export default defineSchema({
       v.literal("toimitusjohtaja"),
       v.literal("myyntipäällikkö"),
       v.literal("myyntiedustaja"),
+      v.literal("tehtaanjohtaja"),
+      v.literal("asiakas"),
       v.literal("muu")
     ),
     email: v.optional(v.string()),

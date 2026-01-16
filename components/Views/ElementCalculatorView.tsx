@@ -55,7 +55,7 @@ interface AIAnalysisResult {
 const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplete }) => {
   const { addElement, quotation, saveQuotation } = useQuotation();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const generateWithImages = isConvexConfigured && api ? useAction(api.gemini.generateWithImages) : null;
+  const generateWithImages = useAction(api?.gemini?.generateWithImages);
   
   // Opening type definition
   interface Opening {
@@ -109,19 +109,41 @@ const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplet
 
   // File handling
   const handleFileSelect = (files: FileList | null) => {
-    if (!files) return;
+    if (!files || files.length === 0) {
+      console.warn('No files provided to handleFileSelect');
+      return;
+    }
+    
+    const validFiles: UploadedDocument[] = [];
     
     Array.from(files).forEach(file => {
-      if (file.type.startsWith('image/') || file.name.match(/\.(pdf|dwg|dxf)$/i)) {
+      // Check if file is valid image (Claude API supports only images)
+      const isImage = file.type.startsWith('image/');
+      const supportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      const isValidImage = isImage && (supportedTypes.includes(file.type) || file.type === 'image/*');
+      
+      if (isValidImage) {
         const doc: UploadedDocument = {
           id: `doc-${Date.now()}-${Math.random()}`,
           file,
           category: 'muu',
-          preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
+          preview: URL.createObjectURL(file)
         };
-        setUploadedDocs(prev => [...prev, doc]);
+        validFiles.push(doc);
+      } else {
+        console.warn(`File rejected: ${file.name} (type: ${file.type})`);
+        if (file.name.match(/\.pdf$/i)) {
+          alert(`PDF-tiedosto ${file.name} ei ole tuettu Claude API:n kautta. Muunna PDF kuvaksi (PNG/JPG) ennen lataamista.`);
+        } else {
+          alert(`Tiedosto ${file.name} ei ole tuettu. Tuetut muodot: PNG, JPG, GIF, WebP`);
+        }
       }
     });
+    
+    if (validFiles.length > 0) {
+      setUploadedDocs(prev => [...prev, ...validFiles]);
+      console.log(`Added ${validFiles.length} file(s) to uploadedDocs`);
+    }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,16 +174,33 @@ const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplet
 
     try {
       // Convert images to base64
+      // Claude Sonnet supports only images: PNG, JPG, GIF, WebP
+      // PDF files are not supported via image API - they need to be converted to images first
       const imagePromises = uploadedDocs
-        .filter(doc => doc.file.type.startsWith('image/'))
+        .filter(doc => {
+          // Only process actual image files
+          const isImage = doc.file.type.startsWith('image/');
+          if (!isImage) {
+            console.warn(`Tiedosto ${doc.file.name} (${doc.file.type}) ei ole kuvatiedosto. Claude API tukee vain kuvatiedostoja (PNG, JPG, GIF, WebP).`);
+          }
+          return isImage;
+        })
         .slice(0, 3) // Claude supports max 3 images per request
         .map(doc => {
           return new Promise<{ mimeType: string; base64Data: string }>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => {
               const base64 = (reader.result as string).split(',')[1];
+              // Ensure we have a valid image MIME type
+              const mimeType = doc.file.type || 'image/png';
+              // Validate MIME type is supported by Claude
+              const supportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+              if (!supportedTypes.includes(mimeType)) {
+                reject(new Error(`Kuvatiedostomuoto ${mimeType} ei ole tuettu. Tuetut muodot: PNG, JPG, GIF, WebP`));
+                return;
+              }
               resolve({
-                mimeType: doc.file.type,
+                mimeType: mimeType,
                 base64Data: base64
               });
             };
@@ -169,6 +208,17 @@ const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplet
             reader.readAsDataURL(doc.file);
           });
         });
+
+      if (imagePromises.length === 0) {
+        const hasPDFs = uploadedDocs.some(doc => doc.file.name.match(/\.pdf$/i));
+        if (hasPDFs) {
+          alert('PDF-tiedostot eivät ole tuettuja Claude API:n kautta. Muunna PDF-tiedostot kuviksi (PNG/JPG) ennen analysointia.');
+        } else {
+          alert('Ei analysoitavia kuvatiedostoja. Lataa kuvatiedostoja (PNG, JPG, GIF, WebP).');
+        }
+        setIsAnalyzing(false);
+        return;
+      }
 
       const imageData = await Promise.all(imagePromises);
 
@@ -214,7 +264,15 @@ const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplet
       // Prepare prompt for Claude
       const prompt = `${instruction}${contextInfo}
 
-Palauta vastaus JSON-muodossa seuraavalla rakenteella:
+**TÄRKEÄÄ: Palauta VAIN JSON-objekti, ei mitään muuta tekstiä. Älä lisää selityksiä, kommentteja tai muuta tekstiä JSON-objektin ympärille.**
+
+**JSON-SYNTAKSI: Varmista että JSON on syntaktisesti oikein:**
+- Jokainen avaava aaltosulje { tarvitsee vastaavan sulkevan aaltosulkeen }
+- Jokainen avaava hakasulje [ tarvitsee vastaavan sulkevan hakasulkeen ]
+- Käytä pilkkua (,) elementtien välissä, mutta EI viimeisen elementin jälkeen
+- Käytä lainausmerkkejä ("") avainten ja merkkijonojen ympärillä
+
+Palauta vastaus JSON-muodossa seuraavalla rakenteella (HUOM: älä duplikaa aaltosulkeita):
 {
   "suggestedElements": [
     {
@@ -272,7 +330,9 @@ Jos tarvitset lisätietoja tarkempaa määrälaskentaa varten, lisää 1-3 kysym
 Kussakin kysymyksessä anna 3 vaihtoehtoa (a, b, c). 
 Jos sinulla on tarpeeksi tietoa analysoida piirustukset ja laskea määrät, jätä "questions" tyhjäksi taulukoksi.
 
-Ole tarkka mitoissa ja anna realistisia määriä.`;
+Ole tarkka mitoissa ja anna realistisia määriä.
+
+**MUISTA: Palauta VAIN JSON-objekti, aloita vastauksesi { -merkillä ja päätä } -merkillä. Älä lisää mitään tekstiä JSON-objektin ympärille.**`;
 
       // Call Claude API via Convex (server-side, secure)
       if (!generateWithImages) {
@@ -286,14 +346,125 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
 
       const text = apiResult.text;
 
-      // Parse JSON from response (might be wrapped in markdown)
-      let jsonText = text;
-      const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/```\s*([\s\S]*?)\s*```/);
-      if (jsonMatch) {
-        jsonText = jsonMatch[1];
+      // Parse JSON from response (might be wrapped in markdown or have extra text)
+      let jsonText = text.trim();
+      
+      console.log('Raw AI response:', jsonText.substring(0, 500));
+      
+      // First, try to extract JSON from markdown code blocks
+      const codeBlockMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (codeBlockMatch) {
+        jsonText = codeBlockMatch[1].trim();
+        console.log('Extracted from code block');
+      }
+      
+      // Remove markdown headers (lines starting with #)
+      jsonText = jsonText.split('\n')
+        .filter(line => !line.trim().startsWith('#'))
+        .join('\n');
+      
+      // Remove any text before the first { and after the last }
+      // This handles cases where AI adds explanatory text
+      const firstBrace = jsonText.indexOf('{');
+      const lastBrace = jsonText.lastIndexOf('}');
+      
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        // Extract only the JSON object part
+        jsonText = jsonText.substring(firstBrace, lastBrace + 1);
+        console.log('Extracted JSON object');
+      } else {
+        // If no braces found, try to find JSON array or other structures
+        // But for now, we expect an object
+        console.warn('No JSON object boundaries found, trying full text');
+      }
+      
+      // Remove any leading/trailing quotes that might cause issues
+      jsonText = jsonText.trim();
+      if (jsonText.startsWith("'") && jsonText.endsWith("'")) {
+        jsonText = jsonText.slice(1, -1);
+      }
+      if (jsonText.startsWith('"') && jsonText.endsWith('"')) {
+        jsonText = jsonText.slice(1, -1);
+      }
+      
+      // Final cleanup - remove any remaining non-JSON content
+      jsonText = jsonText.trim();
+      
+      // Validate that we have something that looks like JSON
+      if (!jsonText.startsWith('{') || !jsonText.endsWith('}')) {
+        // Try one more time to find JSON in the original text
+        const jsonObjectMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonObjectMatch) {
+          jsonText = jsonObjectMatch[0];
+          console.log('Found JSON using regex match');
+        } else {
+          throw new Error(`AI-vastaus ei sisällä kelvollista JSON-objektia. Vastaus alkaa: "${text.substring(0, 200)}..."`);
+        }
       }
 
-      const analysisResult: AIAnalysisResult = JSON.parse(jsonText);
+      // Try to fix common JSON errors before parsing
+      const fixCommonJSONErrors = (json: string): string => {
+        let fixed = json;
+        
+        // Fix double opening braces: {{ -> {
+        fixed = fixed.replace(/\{\s*\{/g, '{');
+        
+        // Fix double closing braces: }} -> }
+        fixed = fixed.replace(/\}\s*\}/g, '}');
+        
+        // Fix cases where there's an extra { after array opening [
+        // Pattern: [\s\n]*{\s*\n\s*{ -> [\s\n]*{
+        fixed = fixed.replace(/\[\s*\n\s*\{\s*\n\s*\{/g, '[\n    {');
+        fixed = fixed.replace(/\[\s*\{\s*\{/g, '[{');
+        
+        // Fix missing commas between array elements
+        // Pattern: }\s*\n\s*{ (in array context) -> },\n    {
+        fixed = fixed.replace(/\}\s*\n\s*\{/g, '},\n    {');
+        
+        // Remove trailing commas before closing brackets/braces
+        fixed = fixed.replace(/,(\s*[}\]])/g, '$1');
+        
+        return fixed;
+      };
+
+      let analysisResult: AIAnalysisResult;
+      try {
+        console.log('Attempting to parse JSON:', jsonText.substring(0, 200));
+        analysisResult = JSON.parse(jsonText);
+        console.log('JSON parsed successfully');
+      } catch (parseError) {
+        // Try to fix common JSON errors
+        console.log('Initial parse failed, attempting to fix common errors...');
+        let fixedJson = fixCommonJSONErrors(jsonText);
+        
+        try {
+          console.log('Retrying with fixed JSON');
+          analysisResult = JSON.parse(fixedJson);
+          console.log('JSON parsed successfully after fixing');
+        } catch (fixError) {
+          // If fixing didn't work, try to extract JSON more aggressively
+          const jsonObjectMatch = text.match(/\{[\s\S]*\}/);
+          if (jsonObjectMatch) {
+            try {
+              console.log('Retrying with regex-extracted JSON');
+              let extractedJson = jsonObjectMatch[0];
+              extractedJson = fixCommonJSONErrors(extractedJson);
+              analysisResult = JSON.parse(extractedJson);
+              console.log('JSON parsed successfully from extracted text');
+            } catch (retryError) {
+              console.error('JSON parse error:', parseError);
+              console.error('Fix attempt error:', fixError);
+              console.error('Full response:', text);
+              throw new Error(`JSON-parsinta epäonnistui: ${parseError instanceof Error ? parseError.message : 'Tuntematon virhe'}. Vastaus alkaa: "${text.substring(0, 300)}..."`);
+            }
+          } else {
+            console.error('JSON parse error:', parseError);
+            console.error('Fix attempt error:', fixError);
+            console.error('Full response:', text);
+            throw new Error(`JSON-parsinta epäonnistui: ${parseError instanceof Error ? parseError.message : 'Tuntematon virhe'}. Vastaus alkaa: "${text.substring(0, 300)}..."`);
+          }
+        }
+      }
 
       // Check if AI has questions
       const questions = analysisResult.questions || [];
@@ -489,8 +660,16 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
                     }}
                     onDrop={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       setIsDragging(false);
-                      handleFileSelect(e.dataTransfer.files);
+                      
+                      const files = e.dataTransfer.files;
+                      if (files && files.length > 0) {
+                        console.log(`Dropped ${files.length} file(s)`);
+                        handleFileSelect(files);
+                      } else {
+                        console.warn('No files in dataTransfer');
+                      }
                     }}
                     onClick={() => fileInputRef.current?.click()}
                   >
@@ -498,14 +677,14 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
                     <p className="text-slate-600 font-medium mb-1">
                       Vedä piirustukset tähän tai klikkaa valitaksesi
                     </p>
-                    <p className="text-xs text-slate-400">
-                      Tuettu: PDF, PNG, JPG, DWG, DXF
+                      <p className="text-xs text-slate-400">
+                      Tuettu: PNG, JPG, GIF, WebP (PDF-tiedostot täytyy muuntaa kuviksi)
                     </p>
                     <input
                       ref={fileInputRef}
                       type="file"
                       multiple
-                      accept="image/*,.pdf,.dwg,.dxf"
+                      accept="image/*"
                       onChange={handleFileInput}
                       className="hidden"
                     />
@@ -788,14 +967,26 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
                   {/* AI Analysis Results - Detailed List */}
                   {analysisResult && (
                     <div className="mt-4 space-y-4">
-                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                        <h4 className="font-bold text-green-900 mb-3 flex items-center gap-2">
+                      <div className={`p-4 border rounded-lg ${
+                        analysisResult.suggestedElements.length === 0 && analysisResult.suggestedTrusses.length === 0
+                          ? 'bg-amber-50 border-amber-200'
+                          : 'bg-green-50 border-green-200'
+                      }`}>
+                        <h4 className={`font-bold mb-3 flex items-center gap-2 ${
+                          analysisResult.suggestedElements.length === 0 && analysisResult.suggestedTrusses.length === 0
+                            ? 'text-amber-900'
+                            : 'text-green-900'
+                        }`}>
                           <Sparkles size={16} /> AI-analyysin tulokset
                         </h4>
-                        <div className="space-y-2 text-sm text-green-800">
-                          <p><strong>Ehdotetut elementit:</strong> {analysisResult.suggestedElements.length} tyyppiä</p>
-                          <p><strong>Ehdotetut ristikot:</strong> {analysisResult.suggestedTrusses.length} tyyppiä</p>
-                          {analysisResult.notes.length > 0 && (
+                        <div className={`space-y-2 text-sm ${
+                          analysisResult.suggestedElements.length === 0 && analysisResult.suggestedTrusses.length === 0
+                            ? 'text-amber-800'
+                            : 'text-green-800'
+                        }`}>
+                          <p><strong>Ehdotetut elementit:</strong> {analysisResult.suggestedElements?.length || 0} tyyppiä</p>
+                          <p><strong>Ehdotetut ristikot:</strong> {analysisResult.suggestedTrusses?.length || 0} tyyppiä</p>
+                          {analysisResult.notes && analysisResult.notes.length > 0 && (
                             <div className="mt-2">
                               <strong>Huomiot:</strong>
                               <ul className="list-disc list-inside mt-1">
@@ -803,6 +994,14 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
                                   <li key={i}>{note}</li>
                                 ))}
                               </ul>
+                            </div>
+                          )}
+                          {analysisResult.suggestedElements.length === 0 && analysisResult.suggestedTrusses.length === 0 && (
+                            <div className="mt-2 p-2 bg-white/50 rounded border border-amber-300">
+                              <p className="text-xs">
+                                <strong>Vinkki:</strong> Varmista, että olet ladannut piirustukset (pohjapiirustus, julkisivupiirustus, leikkauspiirustus) ja että ne ovat selkeät ja luettavat. 
+                                Jos piirustukset ovat olemassa mutta analyysi ei löytänyt elementtejä, kokeile analysoida uudelleen.
+                              </p>
                             </div>
                           )}
                         </div>

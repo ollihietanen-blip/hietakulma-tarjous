@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Send, Sparkles, RefreshCw, User, Building2, FileText, AlertCircle } from 'lucide-react';
 import { Quotation, QuotationVersion } from '../../types';
-import { useAction } from 'convex/react';
 import { api } from '../../convex/_generated/api.js';
 import { isConvexConfigured } from '../../lib/convexClient';
+import { useAction } from '../../lib/convexHooks';
 
 interface SendQuotationModalProps {
   isOpen: boolean;
@@ -27,7 +27,7 @@ const SendQuotationModal: React.FC<SendQuotationModalProps> = ({
   const [selectedTone, setSelectedTone] = useState<'professional' | 'friendly' | 'formal'>('professional');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [changes, setChanges] = useState<string>('');
-  const generateText = isConvexConfigured ? useAction(api.gemini.generateText) : null;
+  const generateText = useAction(api?.gemini?.generateText);
 
   // Check if this is an updated quotation
   const isUpdate = previousVersion !== undefined && previousVersion !== null;

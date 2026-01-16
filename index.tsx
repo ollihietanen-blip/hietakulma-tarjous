@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { ConvexProvider } from 'convex/react';
 import { convex, isConvexConfigured } from './lib/convexClient';
 import App from './App';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -17,12 +18,14 @@ const app = <App />;
 
 root.render(
   <React.StrictMode>
-    {isConvexConfigured && convex ? (
-      <ConvexProvider client={convex}>
-        {app}
-      </ConvexProvider>
-    ) : (
-      app
-    )}
+    <ErrorBoundary>
+      {isConvexConfigured && convex ? (
+        <ConvexProvider client={convex}>
+          {app}
+        </ConvexProvider>
+      ) : (
+        app
+      )}
+    </ErrorBoundary>
   </React.StrictMode>
 );

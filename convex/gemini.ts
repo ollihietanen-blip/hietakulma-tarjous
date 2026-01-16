@@ -2,59 +2,54 @@ import { action } from "./_generated/server";
 import { v } from "convex/values";
 
 /**
- * Server-side Claude Sonnet 4.5 API integration
+ * Server-side Gemini 3.0 Pro API integration
  * This keeps the API key secure on the server
  */
 
-interface ClaudeMessageContent {
-  type: "text" | "image";
+interface GeminiPart {
   text?: string;
-  source?: {
-    type: "base64";
-    media_type: string;
+  inline_data?: {
+    mime_type: string;
     data: string;
   };
 }
 
-interface ClaudeRequest {
-  model: string;
-  max_tokens: number;
-  messages: Array<{
-    role: "user";
-    content: Array<ClaudeMessageContent>;
+interface GeminiRequest {
+  contents: Array<{
+    parts: Array<GeminiPart>;
   }>;
 }
 
-interface ClaudeResponse {
-  content: Array<{
-    type: "text";
-    text: string;
+interface GeminiResponse {
+  candidates?: Array<{
+    content: {
+      parts: Array<{
+        text: string;
+      }>;
+    };
   }>;
 }
 
 /**
- * Call Claude API with text prompt
+ * Call Gemini 3.0 Pro API with text prompt
  */
 export const generateText = action({
   args: {
     prompt: v.string(),
   },
   handler: async (ctx, args) => {
-    const apiKey = process.env.CLAUDE_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error("CLAUDE_API_KEY ei ole määritelty Convex-ympäristössä. Aseta se Convex Dashboardissa.");
+      throw new Error("GEMINI_API_KEY ei ole määritelty Convex-ympäristössä. Aseta se Convex Dashboardissa.");
     }
 
-    const apiUrl = "https://api.anthropic.com/v1/messages";
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-pro:generateContent?key=${apiKey}`;
     
-    const requestBody: ClaudeRequest = {
-      model: "claude-sonnet-4-5-20250929",
-      max_tokens: 1024,
-      messages: [
+    const requestBody: GeminiRequest = {
+      contents: [
         {
-          role: "user",
-          content: [
-            { type: "text", text: args.prompt }
+          parts: [
+            { text: args.prompt }
           ]
         }
       ]
@@ -63,33 +58,31 @@ export const generateText = action({
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(`Claude API error: ${response.status} - ${JSON.stringify(errorData)}`);
+      const errorData = await response.text().catch(() => '');
+      throw new Error(`Gemini API error: ${response.status} - ${errorData}`);
     }
 
-    const data: ClaudeResponse = await response.json();
+    const data: GeminiResponse = await response.json();
     
-    if (data.content?.[0]?.text) {
+    if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
       return {
-        text: data.content[0].text,
+        text: data.candidates[0].content.parts[0].text,
         fullResponse: data,
       };
     }
 
-    throw new Error("Claude API ei palauttanut tekstiä");
+    throw new Error("Gemini API ei palauttanut tekstiä");
   },
 });
 
 /**
- * Call Claude API with images and text prompt
+ * Call Gemini 3.0 Pro API with images and text prompt
  */
 export const generateWithImages = action({
   args: {
@@ -100,35 +93,39 @@ export const generateWithImages = action({
     })),
   },
   handler: async (ctx, args) => {
-    const apiKey = process.env.CLAUDE_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error("CLAUDE_API_KEY ei ole määritelty Convex-ympäristössä. Aseta se Convex Dashboardissa.");
+      throw new Error("GEMINI_API_KEY ei ole määritelty Convex-ympäristössä. Aseta se Convex Dashboardissa.");
     }
 
-    // Claude supports multiple images per request
-    const imagesToUse = args.images.slice(0, 3);
+    // Gemini 3.0 Pro supports multiple images per request (up to 16)
+    // Supported formats: PNG, JPG, GIF, WebP, HEIC, HEIF
+    const imagesToUse = args.images.slice(0, 16);
 
-    const apiUrl = "https://api.anthropic.com/v1/messages";
+    // Validate MIME types are supported
+    const supportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
+    for (const img of imagesToUse) {
+      if (!supportedTypes.includes(img.mimeType)) {
+        throw new Error(`Gemini API ei tue media-tyyppiä: ${img.mimeType}. Tuetut tyypit: ${supportedTypes.join(', ')}`);
+      }
+    }
+
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-pro:generateContent?key=${apiKey}`;
     
-    const content: Array<ClaudeMessageContent> = [
-      { type: "text", text: args.prompt },
+    const parts: Array<GeminiPart> = [
+      { text: args.prompt },
       ...imagesToUse.map(img => ({
-        type: "image" as const,
-        source: {
-          type: "base64" as const,
-          media_type: img.mimeType,
+        inline_data: {
+          mime_type: img.mimeType,
           data: img.base64Data,
         }
       }))
     ];
 
-    const requestBody: ClaudeRequest = {
-      model: "claude-sonnet-4-5-20250929",
-      max_tokens: 1024,
-      messages: [
+    const requestBody: GeminiRequest = {
+      contents: [
         {
-          role: "user",
-          content: content
+          parts: parts
         }
       ]
     };
@@ -136,27 +133,25 @@ export const generateWithImages = action({
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(`Claude API error: ${response.status} - ${JSON.stringify(errorData)}`);
+      const errorData = await response.text().catch(() => '');
+      throw new Error(`Gemini API error: ${response.status} - ${errorData}`);
     }
 
-    const data: ClaudeResponse = await response.json();
+    const data: GeminiResponse = await response.json();
     
-    if (data.content?.[0]?.text) {
+    if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
       return {
-        text: data.content[0].text,
+        text: data.candidates[0].content.parts[0].text,
         fullResponse: data,
       };
     }
 
-    throw new Error("Claude API ei palauttanut tekstiä");
+    throw new Error("Gemini API ei palauttanut tekstiä");
   },
 });
