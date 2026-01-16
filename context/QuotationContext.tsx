@@ -1,4 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '../convex/_generated/api';
+import { Id } from '../convex/_generated/dataModel';
+import { isConvexConfigured } from '../lib/convexClient';
+import {
+  convexToQuotation,
+  quotationToConvex,
+  convexToMessage,
+  convexToCommunicationTask,
+  convexToCostEntry,
+} from '../utils/convexHelpers';
 import { 
   Quotation, 
   PricingCalculation, 
@@ -380,6 +391,73 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [quotation, setQuotation] = useState<Quotation>(getInitialState());
   const [pricing, setPricing] = useState<PricingCalculation>(DEFAULT_PRICING);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
+  const [convexQuotationId, setConvexQuotationId] = useState<Id<"quotations"> | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Convex hooks (only used if Convex is configured)
+  const createQuotation = useMutation(isConvexConfigured ? api.quotations.createQuotation : null);
+  const updateQuotation = useMutation(isConvexConfigured ? api.quotations.updateQuotation : null);
+  const getQuotation = useQuery(
+    isConvexConfigured && convexQuotationId ? api.quotations.getQuotation : "skip",
+    isConvexConfigured && convexQuotationId ? { id: convexQuotationId } : "skip"
+  );
+  const getMessages = useQuery(
+    isConvexConfigured && convexQuotationId ? api.messages.getMessages : "skip",
+    isConvexConfigured && convexQuotationId ? { quotationId: convexQuotationId } : "skip"
+  );
+  const getCostEntries = useQuery(
+    isConvexConfigured && convexQuotationId ? api.costEntries.getCostEntries : "skip",
+    isConvexConfigured && convexQuotationId ? { quotationId: convexQuotationId } : "skip"
+  );
+  const getTasks = useQuery(
+    isConvexConfigured && convexQuotationId ? api.communicationTasks.getTasks : "skip",
+    isConvexConfigured && convexQuotationId ? { quotationId: convexQuotationId } : "skip"
+  );
+  const addMessageMutation = useMutation(isConvexConfigured ? api.messages.addMessage : null);
+  const addCostEntryMutation = useMutation(isConvexConfigured ? api.costEntries.addCostEntry : null);
+  const createTaskMutation = useMutation(isConvexConfigured ? api.communicationTasks.createTask : null);
+  const updateTaskMutation = useMutation(isConvexConfigured ? api.communicationTasks.updateTask : null);
+  const completeTaskMutation = useMutation(isConvexConfigured ? api.communicationTasks.completeTask : null);
+  const deleteTaskMutation = useMutation(isConvexConfigured ? api.communicationTasks.deleteTask : null);
+
+  // Load quotation from Convex on mount if ID exists in localStorage
+  useEffect(() => {
+    if (!isConvexConfigured || isInitialized) return;
+    
+    const storedId = localStorage.getItem('convexQuotationId');
+    if (storedId) {
+      try {
+        setConvexQuotationId(storedId as Id<"quotations">);
+      } catch (e) {
+        console.error('Invalid Convex quotation ID in localStorage:', e);
+      }
+    }
+    setIsInitialized(true);
+  }, [isInitialized]);
+
+  // Load quotation data from Convex when it's available
+  useEffect(() => {
+    if (!isConvexConfigured || !getQuotation || !convexQuotationId) return;
+
+    const loadedQuotation = convexToQuotation(getQuotation);
+    
+    // Merge with messages, cost entries, and tasks
+    if (getMessages) {
+      loadedQuotation.messages = getMessages.map(convexToMessage);
+    }
+    if (getCostEntries) {
+      loadedQuotation.postCalculation.entries = getCostEntries.map(convexToCostEntry);
+    }
+    if (getTasks) {
+      loadedQuotation.communicationTasks = getTasks.map(convexToCommunicationTask);
+    }
+
+    // Only update if this is different from current state (avoid infinite loops)
+    if (loadedQuotation.id !== quotation.id || quotation.id !== convexQuotationId) {
+      setQuotation(loadedQuotation);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getQuotation, getMessages, getCostEntries, getTasks, convexQuotationId]);
 
   // Luodaan ensimmäinen versio automaattisesti kun tarjouslaskenta luodaan
   useEffect(() => {
@@ -422,18 +500,71 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return () => clearTimeout(handler);
   }, [quotation]);
   
-  // Simulated save function
-  const saveQuotation = () => {
-    setSaveStatus('saving');
-    setTimeout(() => {
+  // Save function with Convex integration
+  const saveQuotation = async () => {
+    if (!isConvexConfigured) {
+      // Fallback to simulated save if Convex is not configured
+      setSaveStatus('saving');
+      setTimeout(() => {
         setSaveStatus('saved');
-    }, 750);
+      }, 750);
+      return;
+    }
+
+    setSaveStatus('saving');
+    
+    try {
+      const convexData = quotationToConvex(quotation);
+      
+      if (convexQuotationId && updateQuotation) {
+        // Update existing quotation
+        await updateQuotation({
+          id: convexQuotationId,
+          updates: {
+            ...convexData,
+            updatedAt: Date.now(),
+          }
+        });
+      } else if (createQuotation) {
+        // Create new quotation
+        const quotationId = await createQuotation({
+          projectId: quotation.project.number || '',
+          customerId: quotation.customer.name || '',
+          createdBy: quotation.project.owner || 'Olli Hietanen',
+          owner: quotation.project.owner || 'Olli Hietanen',
+          project: convexData.project,
+          customer: convexData.customer,
+          quotationData: {
+            pricing: convexData.pricing,
+            elements: convexData.elements,
+            products: convexData.products,
+            documents: convexData.documents,
+            delivery: convexData.delivery,
+            paymentSchedule: convexData.paymentSchedule,
+            aiAnalysisInstruction: convexData.aiAnalysisInstruction,
+          },
+        });
+        
+        setConvexQuotationId(quotationId);
+        localStorage.setItem('convexQuotationId', quotationId);
+        
+        // Update quotation ID in state
+        setQuotation(prev => ({ ...prev, id: quotationId as string }));
+      }
+      
+      setSaveStatus('saved');
+    } catch (error) {
+      console.error('Failed to save quotation to Convex:', error);
+      setSaveStatus('idle'); // Allow retry
+    }
   };
 
   // --- Actions ---
 
   const resetQuotation = () => {
     setQuotation(getInitialState());
+    setConvexQuotationId(null);
+    localStorage.removeItem('convexQuotationId');
   };
 
   const updateProject = (project: Partial<Quotation['project']>) => {
@@ -645,24 +776,46 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // --- Cost Tracking ---
 
-  const addCostEntry = (entry: Omit<CostEntry, 'id'>) => {
+  const addCostEntry = async (entry: Omit<CostEntry, 'id'>) => {
       // Jos työkustannus, laske summa työtunteista ja tuntihinnasta
       let finalAmount = entry.amount;
       if (entry.costType === 'labor' && entry.laborHours && entry.laborRate) {
           finalAmount = entry.laborHours * entry.laborRate;
       }
       
+      const newEntry: CostEntry = {
+          ...entry,
+          id: generateId(),
+          amount: finalAmount
+      };
+      
+      // Update local state immediately for responsive UI
       setQuotation(prev => ({
           ...prev,
           postCalculation: {
               ...prev.postCalculation,
-              entries: [...prev.postCalculation.entries, { 
-                  ...entry, 
-                  id: generateId(),
-                  amount: finalAmount
-              }]
+              entries: [...prev.postCalculation.entries, newEntry]
           }
       }));
+
+      // Save to Convex if configured
+      if (isConvexConfigured && convexQuotationId && addCostEntryMutation) {
+          try {
+              await addCostEntryMutation({
+                  quotationId: convexQuotationId,
+                  date: entry.date.getTime(),
+                  category: entry.category,
+                  description: entry.description,
+                  amount: finalAmount,
+                  supplier: entry.supplier,
+                  costType: entry.costType,
+                  laborHours: entry.laborHours,
+                  laborRate: entry.laborRate,
+              });
+          } catch (error) {
+              console.error('Failed to save cost entry to Convex:', error);
+          }
+      }
   };
 
   const removeCostEntry = (id: string) => {
@@ -677,17 +830,32 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // --- Communication ---
   
-  const addMessage = (message: Omit<Message, 'id' | 'timestamp'>) => {
+  const addMessage = async (message: Omit<Message, 'id' | 'timestamp'>) => {
       const newMessage: Message = {
           ...message,
           id: generateId(),
           timestamp: new Date()
       };
       
+      // Update local state immediately for responsive UI
       setQuotation(prev => ({
           ...prev,
           messages: [...prev.messages, newMessage]
       }));
+
+      // Save to Convex if configured
+      if (isConvexConfigured && convexQuotationId && addMessageMutation) {
+          try {
+              await addMessageMutation({
+                  quotationId: convexQuotationId,
+                  author: message.author,
+                  text: message.text,
+                  type: message.type,
+              });
+          } catch (error) {
+              console.error('Failed to save message to Convex:', error);
+          }
+      }
 
       // SIMULATE CUSTOMER REPLY
       if (message.type === 'customer' && message.author !== 'Asiakas') {
@@ -703,6 +871,16 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                   ...prev,
                   messages: [...prev.messages, reply]
               }));
+              
+              // Save reply to Convex too
+              if (isConvexConfigured && convexQuotationId && addMessageMutation) {
+                  addMessageMutation({
+                      quotationId: convexQuotationId,
+                      author: reply.author,
+                      text: reply.text,
+                      type: reply.type,
+                  }).catch(error => console.error('Failed to save reply to Convex:', error));
+              }
           }, 1500 + Math.random() * 1000);
       }
   };
@@ -727,7 +905,7 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // --- Communication Tasks ---
 
-  const addCommunicationTask = (task: Omit<CommunicationTask, 'id' | 'createdAt' | 'completed'>) => {
+  const addCommunicationTask = async (task: Omit<CommunicationTask, 'id' | 'createdAt' | 'completed'>) => {
       const newTask: CommunicationTask = {
           ...task,
           id: generateId(),
@@ -735,51 +913,117 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           completed: false
       };
       
+      // Update local state immediately
       setQuotation(prev => ({
           ...prev,
           communicationTasks: [...prev.communicationTasks, newTask]
       }));
+
+      // Save to Convex if configured
+      if (isConvexConfigured && convexQuotationId && createTaskMutation) {
+          try {
+              const taskId = await createTaskMutation({
+                  quotationId: convexQuotationId,
+                  type: task.type,
+                  title: task.title,
+                  description: task.description,
+                  dueDate: task.dueDate?.getTime(),
+                  assignedTo: task.assignedTo,
+                  notes: task.notes,
+              });
+              // Update task ID with Convex ID
+              setQuotation(prev => ({
+                  ...prev,
+                  communicationTasks: prev.communicationTasks.map(t =>
+                      t.id === newTask.id ? { ...t, id: taskId as string } : t
+                  )
+              }));
+          } catch (error) {
+              console.error('Failed to save task to Convex:', error);
+          }
+      }
   };
 
-  const updateCommunicationTask = (id: string, updates: Partial<CommunicationTask>) => {
+  const updateCommunicationTask = async (id: string, updates: Partial<CommunicationTask>) => {
+      // Update local state immediately
       setQuotation(prev => ({
           ...prev,
           communicationTasks: prev.communicationTasks.map(task =>
               task.id === id ? { ...task, ...updates } : task
           )
       }));
-  };
 
-  const completeCommunicationTask = (id: string, notes?: string) => {
-      setQuotation(prev => {
-          const task = prev.communicationTasks.find(t => t.id === id);
-          if (!task) return prev;
-
-          // Lisää muistiinpano viestinnän osioon
-          if (notes) {
-              addMessage({
-                  author: 'Järjestelmä',
-                  text: `Tehtävä suoritettu: ${task.title}${notes ? '\n\nMuistiinpanot:\n' + notes : ''}`,
-                  type: 'internal'
+      // Save to Convex if configured
+      if (isConvexConfigured && updateTaskMutation) {
+          try {
+              await updateTaskMutation({
+                  taskId: id as Id<"communicationTasks">,
+                  updates: {
+                      title: updates.title,
+                      description: updates.description,
+                      dueDate: updates.dueDate?.getTime(),
+                      assignedTo: updates.assignedTo,
+                      notes: updates.notes,
+                  },
               });
+          } catch (error) {
+              console.error('Failed to update task in Convex:', error);
           }
-
-          return {
-              ...prev,
-              communicationTasks: prev.communicationTasks.map(t =>
-                  t.id === id 
-                      ? { ...t, completed: true, completedAt: new Date(), notes: notes || t.notes }
-                      : t
-              )
-          };
-      });
+      }
   };
 
-  const removeCommunicationTask = (id: string) => {
+  const completeCommunicationTask = async (id: string, notes?: string) => {
+      const task = quotation.communicationTasks.find(t => t.id === id);
+      if (!task) return;
+
+      // Lisää muistiinpano viestinnän osioon
+      if (notes) {
+          addMessage({
+              author: 'Järjestelmä',
+              text: `Tehtävä suoritettu: ${task.title}${notes ? '\n\nMuistiinpanot:\n' + notes : ''}`,
+              type: 'internal'
+          });
+      }
+
+      // Update local state
+      setQuotation(prev => ({
+          ...prev,
+          communicationTasks: prev.communicationTasks.map(t =>
+              t.id === id 
+                  ? { ...t, completed: true, completedAt: new Date(), notes: notes || t.notes }
+                  : t
+          )
+      }));
+
+      // Save to Convex if configured
+      if (isConvexConfigured && completeTaskMutation) {
+          try {
+              await completeTaskMutation({
+                  taskId: id as Id<"communicationTasks">,
+              });
+          } catch (error) {
+              console.error('Failed to complete task in Convex:', error);
+          }
+      }
+  };
+
+  const removeCommunicationTask = async (id: string) => {
+      // Update local state immediately
       setQuotation(prev => ({
           ...prev,
           communicationTasks: prev.communicationTasks.filter(t => t.id !== id)
       }));
+
+      // Delete from Convex if configured
+      if (isConvexConfigured && deleteTaskMutation) {
+          try {
+              await deleteTaskMutation({
+                  taskId: id as Id<"communicationTasks">,
+              });
+          } catch (error) {
+              console.error('Failed to delete task from Convex:', error);
+          }
+      }
   };
 
   // --- Version Management ---

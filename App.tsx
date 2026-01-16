@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { QuotationProvider } from './context/QuotationContext';
 import Sidebar from './components/Layout/Sidebar';
 import DashboardHome from './components/Views/DashboardHome';
@@ -12,7 +12,12 @@ import CostTrackingView from './components/Views/CostTrackingView';
 import TrussCalculatorView from './components/Views/TrussCalculatorView';
 import CalendarView from './components/Views/CalendarView';
 import ContractView from './components/Views/ContractView';
+import UsersManagementView from './components/Views/UsersManagementView';
 import { Menu } from 'lucide-react';
+import { useQuery } from 'convex/react';
+import { api } from './convex/_generated/api';
+import { isConvexConfigured } from './lib/convexClient';
+import { Id } from './convex/_generated/dataModel';
 
 // Added 'messages'
 export type TabType = 'documents' | 'elements' | 'products' | 'installation' | 'pricing' | 'delivery' | 'summary' | 'contract' | 'messages';
@@ -21,7 +26,60 @@ export type UserRole = 'sales' | 'manager';
 function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [userRole, setUserRole] = useState<UserRole>('sales');
+  
+  // Get current user from database
+  const [currentUserId, setCurrentUserId] = useState<Id<"users"> | null>(() => {
+    const stored = localStorage.getItem('currentUserId');
+    return stored as Id<"users"> | null;
+  });
+  
+  const users = isConvexConfigured ? useQuery(api.users.listUsers) : null;
+  const currentUser = users?.find(u => u._id === currentUserId) || users?.find(u => u.active) || null;
+  
+  // Set first user as current if none selected
+  useEffect(() => {
+    if (users && users.length > 0 && !currentUserId) {
+      const firstActiveUser = users.find(u => u.active) || users[0];
+      if (firstActiveUser) {
+        setCurrentUserId(firstActiveUser._id);
+        localStorage.setItem('currentUserId', firstActiveUser._id);
+      }
+    }
+  }, [users, currentUserId]);
+  
+  // Listen for user changes from localStorage and custom events
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'currentUserId' && e.newValue) {
+        setCurrentUserId(e.newValue as Id<"users">);
+      }
+    };
+    
+    const handleCustomStorage = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        setCurrentUserId(customEvent.detail as Id<"users">);
+      } else {
+        const stored = localStorage.getItem('currentUserId');
+        if (stored) {
+          setCurrentUserId(stored as Id<"users">);
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('currentUserIdChanged', handleCustomStorage);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('currentUserIdChanged', handleCustomStorage);
+    };
+  }, []);
+  
+  // Update userRole based on current user
+  const userRole: UserRole = currentUser 
+    ? (currentUser.role === 'toimitusjohtaja' || currentUser.role === 'myyntipäällikkö' ? 'manager' : 'sales')
+    : 'sales';
 
   const projectViews = [
     'project_dashboard', 
@@ -65,7 +123,7 @@ function App() {
             isOpen={isMobileMenuOpen}
             onClose={() => setIsMobileMenuOpen(false)}
             userRole={userRole}
-            onToggleRole={() => setUserRole(prev => prev === 'sales' ? 'manager' : 'sales')}
+            onToggleRole={() => {}} // Disabled - role comes from database
             isProjectActive={isProjectActive}
         />
 
@@ -76,6 +134,7 @@ function App() {
                    <DashboardHome 
                         onNewQuote={() => setCurrentView('customers')} 
                         userRole={userRole}
+                        currentUser={currentUser}
                    />
                </div>
            )}
@@ -128,6 +187,11 @@ function App() {
            {currentView === 'contract_view' && (
                <div className="flex-1 bg-hieta-light">
                    <ContractView />
+               </div>
+           )}
+           {currentView === 'users_management' && (
+               <div className="flex-1 bg-hieta-light">
+                   <UsersManagementView />
                </div>
            )}
         </div>

@@ -259,4 +259,22 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_default", ["isDefault"]),
+
+  // Käyttäjät
+  users: defineTable({
+    name: v.string(),
+    role: v.union(
+      v.literal("toimitusjohtaja"),
+      v.literal("myyntipäällikkö"),
+      v.literal("myyntiedustaja"),
+      v.literal("muu")
+    ),
+    email: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    active: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_role", ["role"])
+    .index("by_active", ["active"]),
 });

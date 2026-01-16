@@ -3,8 +3,11 @@ import { useQuotation } from '../../context/QuotationContext';
 import Breadcrumb from '../Layout/Breadcrumb';
 import { ArrowRight, Ruler, Home, Box, Layers, PenTool, CheckCircle, Upload, FileText, X, Sparkles, Loader2, AlertCircle, Plus } from 'lucide-react';
 import { useAction } from 'convex/react';
-import { api } from '../../convex/_generated/api';
 import { isConvexConfigured } from '../../lib/convexClient';
+
+// Conditional import for Convex API (handles missing generated files in build)
+// @ts-ignore - Generated file may not exist in build
+import { api } from '../../convex/_generated/api';
 
 interface ElementCalculatorViewProps {
   onComplete: () => void;
@@ -52,7 +55,7 @@ interface AIAnalysisResult {
 const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplete }) => {
   const { addElement, quotation, saveQuotation } = useQuotation();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const generateWithImages = isConvexConfigured ? useAction(api.gemini.generateWithImages) : null;
+  const generateWithImages = isConvexConfigured && api ? useAction(api.gemini.generateWithImages) : null;
   
   // Opening type definition
   interface Opening {

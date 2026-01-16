@@ -556,14 +556,26 @@ const ProjectDashboardView: React.FC<ProjectDashboardViewProps> = ({ onNext }) =
                         </h2>
                         <div className="flex gap-2">
                             <button
-                                onClick={() => setShowDictationModal(true)}
-                                className="text-xs font-bold text-purple-600 hover:underline flex items-center gap-1"
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('Sanelu-nappi painettu');
+                                    setShowDictationModal(true);
+                                }}
+                                className="text-xs font-bold text-purple-600 hover:text-purple-700 hover:underline flex items-center gap-1 px-2 py-1 rounded hover:bg-purple-50 transition-colors cursor-pointer"
                             >
                                 <Mic size={14} /> Sanelu
                             </button>
                             <button 
-                                onClick={() => setShowTaskModal(true)}
-                                className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('Uusi tehtävä -nappi painettu');
+                                    setShowTaskModal(true);
+                                }}
+                                className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-50 transition-colors cursor-pointer"
                             >
                                 <PlusIcon size={14} /> Uusi tehtävä
                             </button>
@@ -789,6 +801,327 @@ const ProjectDashboardView: React.FC<ProjectDashboardViewProps> = ({ onNext }) =
                             </button>
                             <button
                                 onClick={() => setShowVersionModal(false)}
+                                className="px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-lg transition-all"
+                            >
+                                Peruuta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Task Creation Modal */}
+        {showTaskModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowTaskModal(false)}>
+                <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold text-slate-900">Luo uusi tehtävä</h3>
+                        <button onClick={() => setShowTaskModal(false)} className="p-1 hover:bg-slate-100 rounded">
+                            <X size={20} className="text-slate-500" />
+                        </button>
+                    </div>
+                    
+                    <div className="space-y-4">
+                        <div>
+                            <label className={labelClasses}>Tehtävän tyyppi</label>
+                            <select 
+                                value={newTask.type}
+                                onChange={(e) => setNewTask({ ...newTask, type: e.target.value as any })}
+                                className={inputClasses}
+                            >
+                                <option value="call">Puhelu</option>
+                                <option value="email">Sähköposti</option>
+                                <option value="meeting">Tapaaminen</option>
+                                <option value="other">Muu</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className={labelClasses}>Otsikko *</label>
+                            <input
+                                type="text"
+                                value={newTask.title}
+                                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                                placeholder="esim. Soita asiakkaalle"
+                                className={inputClasses}
+                            />
+                        </div>
+                        <div>
+                            <label className={labelClasses}>Kuvaus (valinnainen)</label>
+                            <textarea
+                                value={newTask.description || ''}
+                                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                                placeholder="Lisätietoja tehtävästä..."
+                                rows={3}
+                                className={inputClasses}
+                            />
+                        </div>
+                        <div>
+                            <label className={labelClasses}>Eräpäivä (valinnainen)</label>
+                            <input
+                                type="date"
+                                value={newTask.dueDate ? formatDateForInput(newTask.dueDate) : ''}
+                                onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.valueAsDate || undefined })}
+                                className={inputClasses}
+                            />
+                        </div>
+                        <div>
+                            <label className={labelClasses}>Vastuuhenkilö</label>
+                            <select 
+                                value={newTask.assignedTo}
+                                onChange={(e) => setNewTask({ ...newTask, assignedTo: e.target.value })}
+                                className={inputClasses}
+                            >
+                                {projectOwners.map(owner => (
+                                    <option key={owner} value={owner}>{owner}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex gap-3 pt-2">
+                            <button
+                                onClick={() => {
+                                    if (!newTask.title.trim()) {
+                                        alert('Anna tehtävälle otsikko');
+                                        return;
+                                    }
+                                    addCommunicationTask({
+                                        type: newTask.type,
+                                        title: newTask.title,
+                                        description: newTask.description || undefined,
+                                        dueDate: newTask.dueDate,
+                                        assignedTo: newTask.assignedTo
+                                    });
+                                    setNewTask({
+                                        type: 'call',
+                                        title: '',
+                                        description: '',
+                                        dueDate: undefined,
+                                        assignedTo: 'Olli Hietanen'
+                                    });
+                                    setShowTaskModal(false);
+                                }}
+                                className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition-all"
+                            >
+                                Luo tehtävä
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setNewTask({
+                                        type: 'call',
+                                        title: '',
+                                        description: '',
+                                        dueDate: undefined,
+                                        assignedTo: 'Olli Hietanen'
+                                    });
+                                    setShowTaskModal(false);
+                                }}
+                                className="px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-lg transition-all"
+                            >
+                                Peruuta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Dictation Modal */}
+        {showDictationModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => {
+                                setShowDictationModal(false);
+                                setIsRecording(false);
+                                setDictationText('');
+                                if (recognitionRef.current) {
+                                    recognitionRef.current.stop();
+                                    recognitionRef.current = null;
+                                }
+                            }}>
+                <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                            <Mic size={20} className="text-purple-600" /> Sanelu
+                        </h3>
+                        <button onClick={() => {
+                            setShowDictationModal(false);
+                            setIsRecording(false);
+                            setDictationText('');
+                            if (recognitionRef.current) {
+                                recognitionRef.current.stop();
+                                recognitionRef.current = null;
+                            }
+                        }} className="p-1 hover:bg-slate-100 rounded">
+                            <X size={20} className="text-slate-500" />
+                        </button>
+                    </div>
+                    
+                    <div className="space-y-4">
+                        <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <p className="text-sm text-slate-700 mb-3">
+                                Sanelu luo automaattisesti uuden tehtävän puheestasi. Aloita sanelu ja sano tehtävän tyyppi ja kuvaus.
+                            </p>
+                            {isRecording && (
+                                <div className="flex items-center gap-2 text-red-600 mb-2">
+                                    <Mic size={16} className="animate-pulse" />
+                                    <span className="text-sm font-bold">Nauhoitetaan...</span>
+                                </div>
+                            )}
+                            <button
+                                onClick={() => {
+                                    if (isRecording) {
+                                        // Stop recording
+                                        if (recognitionRef.current) {
+                                            recognitionRef.current.stop();
+                                            recognitionRef.current = null;
+                                        }
+                                        setIsRecording(false);
+                                    } else {
+                                        // Start recording
+                                        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                                        if (!SpeechRecognition) {
+                                            alert('Selaimesi ei tue puheentunnistusta. Kokeile Chrome-selainta.');
+                                            return;
+                                        }
+                                        
+                                        const recognition = new SpeechRecognition();
+                                        recognition.lang = 'fi-FI';
+                                        recognition.continuous = true;
+                                        recognition.interimResults = true;
+                                        
+                                        recognition.onresult = (event: any) => {
+                                            let interimTranscript = '';
+                                            let finalTranscript = '';
+                                            
+                                            for (let i = event.resultIndex; i < event.results.length; i++) {
+                                                const transcript = event.results[i][0].transcript;
+                                                if (event.results[i].isFinal) {
+                                                    finalTranscript += transcript + ' ';
+                                                } else {
+                                                    interimTranscript += transcript;
+                                                }
+                                            }
+                                            
+                                            setDictationText(finalTranscript + interimTranscript);
+                                        };
+                                        
+                                        recognition.onerror = (event: any) => {
+                                            console.error('Speech recognition error:', event.error);
+                                            setIsRecording(false);
+                                            if (recognitionRef.current) {
+                                                recognitionRef.current = null;
+                                            }
+                                        };
+                                        
+                                        recognition.onend = () => {
+                                            setIsRecording(false);
+                                            recognitionRef.current = null;
+                                        };
+                                        
+                                        recognition.start();
+                                        recognitionRef.current = recognition;
+                                        setIsRecording(true);
+                                    }
+                                }}
+                                className={`w-full py-3 px-4 rounded-lg font-bold transition-all flex items-center justify-center gap-2 ${
+                                    isRecording
+                                        ? 'bg-red-600 hover:bg-red-500 text-white'
+                                        : 'bg-purple-600 hover:bg-purple-500 text-white'
+                                }`}
+                            >
+                                {isRecording ? (
+                                    <>
+                                        <MicOff size={18} /> Lopeta sanelu
+                                    </>
+                                ) : (
+                                    <>
+                                        <Mic size={18} /> Aloita sanelu
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                        
+                        <div>
+                            <label className={labelClasses}>Saneltu teksti</label>
+                            <textarea
+                                value={dictationText}
+                                onChange={(e) => setDictationText(e.target.value)}
+                                placeholder="Saneltu teksti ilmestyy tähän..."
+                                rows={4}
+                                className={inputClasses}
+                            />
+                        </div>
+                        
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <p className="text-xs text-blue-800 font-bold mb-1">Vinkki:</p>
+                            <p className="text-xs text-blue-700">
+                                Sano esim: "Puhelu, Soita asiakkaalle huomenna" tai "Sähköposti, Lähetä tarjous asiakkaalle perjantaina"
+                            </p>
+                        </div>
+                        
+                        <div className="flex gap-3 pt-2">
+                            <button
+                                onClick={() => {
+                                    if (!dictationText.trim()) {
+                                        alert('Saneltu teksti on tyhjä');
+                                        return;
+                                    }
+                                    
+                                    // Parse the dictation text to extract task information
+                                    const text = dictationText.trim();
+                                    let type: 'call' | 'email' | 'meeting' | 'other' = 'other';
+                                    let title = text;
+                                    let dueDate: Date | undefined = undefined;
+                                    
+                                    // Try to detect task type
+                                    if (text.toLowerCase().includes('puhelu') || text.toLowerCase().includes('soita')) {
+                                        type = 'call';
+                                    } else if (text.toLowerCase().includes('sähköposti') || text.toLowerCase().includes('email') || text.toLowerCase().includes('lähetä')) {
+                                        type = 'email';
+                                    } else if (text.toLowerCase().includes('tapaaminen') || text.toLowerCase().includes('kokous')) {
+                                        type = 'meeting';
+                                    }
+                                    
+                                    // Try to extract date (simple parsing)
+                                    const today = new Date();
+                                    if (text.toLowerCase().includes('huomenna')) {
+                                        dueDate = new Date(today);
+                                        dueDate.setDate(dueDate.getDate() + 1);
+                                    } else if (text.toLowerCase().includes('ylihuomenna')) {
+                                        dueDate = new Date(today);
+                                        dueDate.setDate(dueDate.getDate() + 2);
+                                    }
+                                    
+                                    addCommunicationTask({
+                                        type,
+                                        title,
+                                        description: undefined,
+                                        dueDate,
+                                        assignedTo: newTask.assignedTo,
+                                        notes: dictationText
+                                    });
+                                    
+                                    setDictationText('');
+                                    setShowDictationModal(false);
+                                    setIsRecording(false);
+                                    if (recognitionRef.current) {
+                                        recognitionRef.current.stop();
+                                        recognitionRef.current = null;
+                                    }
+                                }}
+                                className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg transition-all"
+                                disabled={!dictationText.trim()}
+                            >
+                                Luo tehtävä sanelusta
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setDictationText('');
+                                    setShowDictationModal(false);
+                                    setIsRecording(false);
+                                    if (recognitionRef.current) {
+                                        recognitionRef.current.stop();
+                                        recognitionRef.current = null;
+                                    }
+                                }}
                                 className="px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-lg transition-all"
                             >
                                 Peruuta

@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { ConvexProvider } from 'convex/react';
-import { convex, isConvexConfigured } from './convex/client';
+import { convex, isConvexConfigured } from './lib/convexClient';
 import App from './App';
 
 const rootElement = document.getElementById('root');

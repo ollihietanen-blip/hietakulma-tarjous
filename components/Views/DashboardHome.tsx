@@ -2,14 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
 import { UserRole } from '../../App';
 import { Clock, Plus, ArrowUpRight, CheckCircle, AlertCircle, FileText, TrendingUp, Users, Target, Edit2, Save, X, Trophy, Briefcase, BarChart, ShieldAlert, BadgePercent, Coins } from 'lucide-react';
+import { Doc } from '../../convex/_generated/dataModel';
 
 interface DashboardHomeProps {
   onNewQuote: () => void;
   userRole?: UserRole;
+  currentUser?: Doc<"users"> | null;
 }
 
-const DashboardHome: React.FC<DashboardHomeProps> = ({ onNewQuote, userRole = 'sales' }) => {
+const DashboardHome: React.FC<DashboardHomeProps> = ({ onNewQuote, userRole = 'sales', currentUser }) => {
   const { quotation } = useQuotation();
+  
+  // Get user's first name for greeting
+  const getUserFirstName = () => {
+    if (!currentUser) return 'Käyttäjä';
+    const parts = currentUser.name.split(' ');
+    return parts[0] || currentUser.name;
+  };
+  
+  const currentUserName = currentUser?.name || 'Käyttäjä';
 
   // --- SALESPERSON STATE ---
   const [monthlyTarget, setMonthlyTarget] = useState(200000);
@@ -49,7 +60,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNewQuote, userRole = 's
   // Filter quotes based on role (Manager sees all, Sales sees theirs)
   const visibleQuotes = userRole === 'manager' 
     ? recentQuotes 
-    : recentQuotes.filter(q => q.owner === 'Olli Hietanen');
+    : recentQuotes.filter(q => q.owner === currentUserName);
 
   const stats = userRole === 'sales' ? [
       { label: 'Omat avoimet', value: '14', unit: 'kpl', change: '+2', color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -69,9 +80,12 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ onNewQuote, userRole = 's
         <div>
             <div className="mb-3">
                 <div className="flex items-center gap-2 mb-1">
-                    <h1 className="text-3xl font-display font-bold text-slate-900">Hei, Olli</h1>
+                    <h1 className="text-3xl font-display font-bold text-slate-900">Hei, {getUserFirstName()}</h1>
                     <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${userRole === 'manager' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                        {userRole === 'manager' ? 'Myyntipäällikkö' : 'Myyntiedustaja'}
+                        {currentUser?.role === 'toimitusjohtaja' ? 'Toimitusjohtaja' :
+                         currentUser?.role === 'myyntipäällikkö' ? 'Myyntipäällikkö' :
+                         currentUser?.role === 'myyntiedustaja' ? 'Myyntiedustaja' :
+                         userRole === 'manager' ? 'Myyntipäällikkö' : 'Myyntiedustaja'}
                     </span>
                 </div>
                 <p className="text-slate-500">

@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
-import { LayoutDashboard, Calculator, FileText, Users, LogOut, ChevronRight, KanbanSquare, X, PieChart, RefreshCw, FolderCog, Triangle, Box, ChevronDown, ListTree, Calendar, FileSignature } from 'lucide-react';
+import { LayoutDashboard, Calculator, FileText, Users, LogOut, ChevronRight, KanbanSquare, X, PieChart, RefreshCw, FolderCog, Triangle, Box, ChevronDown, ListTree, Calendar, FileSignature, UserCog } from 'lucide-react';
 import { UserRole } from '../../App';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { isConvexConfigured } from '../../lib/convexClient';
+import { Id } from '../../convex/_generated/dataModel';
 
 interface SidebarProps {
   currentView: string;
@@ -16,6 +20,84 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = true, onClose, userRole = 'sales', onToggleRole, isProjectActive }) => {
   const { quotation } = useQuotation();
   const [isProjectMenuExpanded, setIsProjectMenuExpanded] = useState(isProjectActive);
+  const [showUserSwitcher, setShowUserSwitcher] = useState(false);
+  
+  // Get current user ID from localStorage or use first active user
+  const [currentUserId, setCurrentUserId] = useState<Id<"users"> | null>(() => {
+    const stored = localStorage.getItem('currentUserId');
+    return stored as Id<"users"> | null;
+  });
+  
+  // Fetch all users from database
+  const users = isConvexConfigured ? useQuery(api.users.listUsers) : null;
+  
+  // Find current user
+  const currentUser = users?.find(u => u._id === currentUserId) || users?.find(u => u.active) || null;
+  
+  // Set first user as current if none selected
+  useEffect(() => {
+    if (users && users.length > 0 && !currentUserId) {
+      const firstActiveUser = users.find(u => u.active) || users[0];
+      if (firstActiveUser) {
+        setCurrentUserId(firstActiveUser._id);
+        localStorage.setItem('currentUserId', firstActiveUser._id);
+      }
+    }
+  }, [users, currentUserId]);
+
+  // Handle user switch
+  const handleUserSwitch = (userId: Id<"users">) => {
+    setCurrentUserId(userId);
+    localStorage.setItem('currentUserId', userId);
+    setShowUserSwitcher(false);
+    // Trigger custom event to notify App.tsx
+    window.dispatchEvent(new CustomEvent('currentUserIdChanged', { detail: userId }));
+  };
+
+  // Close user switcher when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showUserSwitcher && !target.closest('.user-switcher-container')) {
+        setShowUserSwitcher(false);
+      }
+    };
+
+    if (showUserSwitcher) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showUserSwitcher]);
+  
+  // Get user initials
+  const getUserInitials = (name: string) => {
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+  
+  // Map role from database to UserRole type
+  const getRoleFromUser = (role: string): UserRole => {
+    if (role === 'toimitusjohtaja' || role === 'myyntipäällikkö') {
+      return 'manager';
+    }
+    return 'sales';
+  };
+  
+  // Get role display name
+  const getRoleDisplayName = (role: string) => {
+    const roleMap: Record<string, string> = {
+      'toimitusjohtaja': 'Toimitusjohtaja',
+      'myyntipäällikkö': 'Myyntipäällikkö',
+      'myyntiedustaja': 'Myyntiedustaja',
+      'muu': 'Käyttäjä'
+    };
+    return roleMap[role] || 'Käyttäjä';
+  };
 
   // Automatically expand the project menu when a project becomes active.
   useEffect(() => {
@@ -36,6 +118,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
     { id: 'contract_view', label: 'Sopimus', icon: <FileSignature size={18} /> },
   ];
 
+  // Check if current user is manager (toimitusjohtaja or myyntipäällikkö)
+  const isManager = currentUser && (currentUser.role === 'toimitusjohtaja' || currentUser.role === 'myyntipäällikkö');
+
   const menuSections = [
     {
       title: 'Hallinta',
@@ -43,6 +128,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
         { id: 'dashboard', label: 'Etusivu', icon: <LayoutDashboard size={20} /> },
         { id: 'pipeline', label: 'Myyntiputki', icon: <KanbanSquare size={20} /> },
         { id: 'calendar', label: 'Kalenteri', icon: <Calendar size={20} /> },
+        ...(isManager ? [{ id: 'users_management', label: 'Käyttäjähallinta', icon: <UserCog size={20} /> }] : []),
       ],
     },
     {
@@ -165,23 +251,79 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
 
         {/* User / Footer */}
         <div className="p-4 border-t border-slate-800 bg-slate-900/50 pb-8 md:pb-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold font-display text-lg
-                ${userRole === 'manager' ? 'bg-purple-500 text-white' : 'bg-hieta-sand text-hieta-black'}
-            `}>
-              OH
-            </div>
-            <div>
-              <div className="text-sm font-bold text-white">Olli Hietanen</div>
-              <div className="text-xs text-slate-500 cursor-pointer hover:text-blue-400 flex items-center gap-1" onClick={onToggleRole}>
-                {userRole === 'manager' ? 'Toimitusjohtaja' : 'Myyntiedustaja'}
-                <RefreshCw size={10} />
+          {currentUser ? (
+            <>
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold font-display text-lg
+                    ${getRoleFromUser(currentUser.role) === 'manager' ? 'bg-purple-500 text-white' : 'bg-hieta-sand text-hieta-black'}
+                `}>
+                  {getUserInitials(currentUser.name)}
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-bold text-white">{currentUser.name}</div>
+                  <div className="relative user-switcher-container">
+                    <div 
+                      className="text-xs text-slate-500 cursor-pointer hover:text-blue-400 flex items-center gap-1" 
+                      onClick={() => users && users.length > 1 && setShowUserSwitcher(!showUserSwitcher)}
+                    >
+                      {getRoleDisplayName(currentUser.role)}
+                      {users && users.length > 1 && <RefreshCw size={10} />}
+                    </div>
+                    {showUserSwitcher && users && users.length > 1 && (
+                      <div className="absolute bottom-full left-0 mb-2 w-48 bg-slate-800 rounded-lg shadow-xl border border-slate-700 z-50 overflow-hidden">
+                        <div className="p-2">
+                          <div className="text-xs font-semibold text-slate-400 uppercase px-2 py-1 mb-1">
+                            Vaihda käyttäjää
+                          </div>
+                          {users.filter(u => u.active).map((user) => (
+                            <button
+                              key={user._id}
+                              onClick={() => handleUserSwitch(user._id)}
+                              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-2 ${
+                                user._id === currentUserId
+                                  ? 'bg-blue-600 text-white'
+                                  : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                              }`}
+                            >
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                user.role === 'toimitusjohtaja' ? 'bg-purple-500 text-white' :
+                                user.role === 'myyntipäällikkö' ? 'bg-blue-500 text-white' :
+                                'bg-hieta-sand text-hieta-black'
+                              }`}>
+                                {getUserInitials(user.name)}
+                              </div>
+                              <div>
+                                <div className="font-medium">{user.name}</div>
+                                <div className="text-xs opacity-75">{getRoleDisplayName(user.role)}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          <button className="w-full flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-white py-2 transition-colors">
-            <LogOut size={14} /> Kirjaudu ulos
-          </button>
+              <button className="w-full flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-white py-2 transition-colors">
+                <LogOut size={14} /> Kirjaudu ulos
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold font-display text-lg bg-slate-700 text-slate-400">
+                  --
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-slate-400">Ladataan...</div>
+                  <div className="text-xs text-slate-600">Käyttäjätietoja</div>
+                </div>
+              </div>
+              <button className="w-full flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-white py-2 transition-colors">
+                <LogOut size={14} /> Kirjaudu ulos
+              </button>
+            </>
+          )}
         </div>
       </div>
     </>
