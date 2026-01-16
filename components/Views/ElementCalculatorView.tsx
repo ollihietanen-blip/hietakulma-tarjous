@@ -86,7 +86,9 @@ const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplet
   // AI questions and answers
   const [aiQuestions, setAiQuestions] = useState<AIQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
-  const [userAnswers, setUserAnswers] = useState<Record<number, 'a' | 'b' | 'c'>>({});
+  const [userAnswers, setUserAnswers] = useState<Record<number, 'a' | 'b' | 'c' | 'text'>>({});
+  const [answerModes, setAnswerModes] = useState<Record<number, 'options' | 'text'>>({});
+  const [textAnswers, setTextAnswers] = useState<Record<number, string>>({});
 
   // Selected items to transfer to quotation
   const [selectedItems, setSelectedItems] = useState({
@@ -195,8 +197,13 @@ const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplet
           const questionIndex = parseInt(index);
           if (aiQuestions[questionIndex]) {
             const question = aiQuestions[questionIndex];
-            const selectedOption = question.options[answer];
-            contextInfo += `- Kysymys: ${question.question}\n  Vastaus: ${answer.toUpperCase()}) ${selectedOption}\n`;
+            const mode = answerModes[questionIndex] || 'options';
+            if (mode === 'text' && textAnswers[questionIndex]) {
+              contextInfo += `- Kysymys: ${question.question}\n  Vastaus: ${textAnswers[questionIndex]}\n`;
+            } else if (mode === 'options' && question.options[answer]) {
+              const selectedOption = question.options[answer];
+              contextInfo += `- Kysymys: ${question.question}\n  Vastaus: ${answer.toUpperCase()}) ${selectedOption}\n`;
+            }
           }
         });
       }
@@ -284,6 +291,8 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
         setAiQuestions([]);
         setCurrentQuestionIndex(0);
         setUserAnswers({});
+        setTextAnswers({});
+        setAnswerModes({});
       }
 
       // Update dimensions if provided
@@ -542,6 +551,8 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
                                 setAiQuestions([]);
                                 setCurrentQuestionIndex(0);
                                 setUserAnswers({});
+                                setTextAnswers({});
+                                setAnswerModes({});
                               }}
                               className="text-amber-700 hover:text-amber-900 transition-colors"
                               title="Ohita kysymykset"
@@ -550,16 +561,84 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
                             </button>
                           </div>
                           
-                          <p className="text-sm text-amber-800 mb-6">
+                          <p className="text-sm text-amber-800 mb-4">
                             Tekoäly tarvitsee lisätietoja tarkempaa analyysiä varten. Valitse vastaus:
                           </p>
+                          
+                          {/* Answer mode toggle */}
+                          <div className="mb-4 flex gap-2">
+                            <button
+                              onClick={() => {
+                                setAnswerModes(prev => ({ ...prev, [currentQuestionIndex]: 'options' }));
+                                // Clear text answer when switching to options
+                                if (textAnswers[currentQuestionIndex]) {
+                                  const newTextAnswers = { ...textAnswers };
+                                  delete newTextAnswers[currentQuestionIndex];
+                                  setTextAnswers(newTextAnswers);
+                                }
+                                // Clear option answer
+                                const newAnswers = { ...userAnswers };
+                                delete newAnswers[currentQuestionIndex];
+                                setUserAnswers(newAnswers);
+                              }}
+                              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                (answerModes[currentQuestionIndex] || 'options') === 'options'
+                                  ? 'bg-blue-600 text-white shadow-md'
+                                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                              }`}
+                            >
+                              Valitse vaihtoehdoista
+                            </button>
+                            <button
+                              onClick={() => {
+                                setAnswerModes(prev => ({ ...prev, [currentQuestionIndex]: 'text' }));
+                                // Clear option answer when switching to text
+                                const newAnswers = { ...userAnswers };
+                                delete newAnswers[currentQuestionIndex];
+                                setUserAnswers(newAnswers);
+                              }}
+                              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                answerModes[currentQuestionIndex] === 'text'
+                                  ? 'bg-blue-600 text-white shadow-md'
+                                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                              }`}
+                            >
+                              Kirjoita oma vastaus
+                            </button>
+                          </div>
                           
                           <div className="bg-white p-5 rounded-lg border border-amber-200 mb-6">
                             <p className="font-semibold text-slate-900 mb-6 text-lg">
                               {aiQuestions[currentQuestionIndex].question}
                             </p>
                             
-                            <div className="space-y-3">
+                            {(answerModes[currentQuestionIndex] || 'options') === 'text' ? (
+                              /* Text input mode */
+                              <div className="space-y-3">
+                                <textarea
+                                  value={textAnswers[currentQuestionIndex] || ''}
+                                  onChange={(e) => {
+                                    setTextAnswers(prev => ({ ...prev, [currentQuestionIndex]: e.target.value }));
+                                    // Mark as answered if text is not empty
+                                    if (e.target.value.trim()) {
+                                      setUserAnswers(prev => ({ ...prev, [currentQuestionIndex]: 'text' }));
+                                    } else {
+                                      const newAnswers = { ...userAnswers };
+                                      delete newAnswers[currentQuestionIndex];
+                                      setUserAnswers(newAnswers);
+                                    }
+                                  }}
+                                  placeholder="Kirjoita vastauksesi tähän..."
+                                  className="w-full p-4 border-2 border-slate-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none min-h-[120px] text-slate-900"
+                                  rows={4}
+                                />
+                                <p className="text-xs text-slate-500">
+                                  Voit kirjoittaa vapaasti vastauksen kysymykseen.
+                                </p>
+                              </div>
+                            ) : (
+                              /* Options mode */
+                              <div className="space-y-3">
                               {/* Option A */}
                               <button
                                 onClick={() => {
@@ -643,6 +722,8 @@ Ole tarkka mitoissa ja anna realistisia määriä.`;
                               </button>
                             </div>
 
+                            )}
+                            
                             {/* Navigation buttons */}
                             <div className="flex items-center justify-between mt-6 pt-4 border-t border-amber-200">
                               <button
