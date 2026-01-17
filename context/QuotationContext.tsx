@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { useMutation, useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api.js';
+import { useMutation, useQuery } from '../lib/convexHooks';
 import { Id } from '../convex/_generated/dataModel';
 import { isConvexConfigured } from '../lib/convexClient';
 import {
@@ -395,30 +395,32 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Convex hooks (only used if Convex is configured)
-  const createQuotation = useMutation(isConvexConfigured ? api.quotations.createQuotation : null);
-  const updateQuotation = useMutation(isConvexConfigured ? api.quotations.updateQuotation : null);
-  const getQuotation = useQuery(
-    isConvexConfigured && convexQuotationId ? api.quotations.getQuotation : "skip",
-    isConvexConfigured && convexQuotationId ? { id: convexQuotationId } : "skip"
-  );
-  const getMessages = useQuery(
-    isConvexConfigured && convexQuotationId ? api.messages.getMessages : "skip",
-    isConvexConfigured && convexQuotationId ? { quotationId: convexQuotationId } : "skip"
-  );
-  const getCostEntries = useQuery(
-    isConvexConfigured && convexQuotationId ? api.costEntries.getCostEntries : "skip",
-    isConvexConfigured && convexQuotationId ? { quotationId: convexQuotationId } : "skip"
-  );
-  const getTasks = useQuery(
-    isConvexConfigured && convexQuotationId ? api.communicationTasks.getTasks : "skip",
-    isConvexConfigured && convexQuotationId ? { quotationId: convexQuotationId } : "skip"
-  );
-  const addMessageMutation = useMutation(isConvexConfigured ? api.messages.addMessage : null);
-  const addCostEntryMutation = useMutation(isConvexConfigured ? api.costEntries.addCostEntry : null);
-  const createTaskMutation = useMutation(isConvexConfigured ? api.communicationTasks.createTask : null);
-  const updateTaskMutation = useMutation(isConvexConfigured ? api.communicationTasks.updateTask : null);
-  const completeTaskMutation = useMutation(isConvexConfigured ? api.communicationTasks.completeTask : null);
-  const deleteTaskMutation = useMutation(isConvexConfigured ? api.communicationTasks.deleteTask : null);
+  // Safely access api object to prevent "Cannot read properties of null" errors
+  const createQuotationQuery = (api && api.quotations && api.quotations.createQuotation) ? api.quotations.createQuotation : undefined;
+  const updateQuotationQuery = (api && api.quotations && api.quotations.updateQuotation) ? api.quotations.updateQuotation : undefined;
+  const getQuotationQuery = (api && api.quotations && api.quotations.getQuotation && isConvexConfigured && convexQuotationId) ? api.quotations.getQuotation : undefined;
+  const getMessagesQuery = (api && api.messages && api.messages.getMessages && isConvexConfigured && convexQuotationId) ? api.messages.getMessages : undefined;
+  const getCostEntriesQuery = (api && api.costEntries && api.costEntries.getCostEntries && isConvexConfigured && convexQuotationId) ? api.costEntries.getCostEntries : undefined;
+  const getTasksQuery = (api && api.communicationTasks && api.communicationTasks.getTasks && isConvexConfigured && convexQuotationId) ? api.communicationTasks.getTasks : undefined;
+  const addMessageQuery = (api && api.messages && api.messages.addMessage) ? api.messages.addMessage : undefined;
+  const addCostEntryQuery = (api && api.costEntries && api.costEntries.addCostEntry) ? api.costEntries.addCostEntry : undefined;
+  const createTaskQuery = (api && api.communicationTasks && api.communicationTasks.createTask) ? api.communicationTasks.createTask : undefined;
+  const updateTaskQuery = (api && api.communicationTasks && api.communicationTasks.updateTask) ? api.communicationTasks.updateTask : undefined;
+  const completeTaskQuery = (api && api.communicationTasks && api.communicationTasks.completeTask) ? api.communicationTasks.completeTask : undefined;
+  const deleteTaskQuery = (api && api.communicationTasks && api.communicationTasks.deleteTask) ? api.communicationTasks.deleteTask : undefined;
+  
+  const createQuotation = useMutation(createQuotationQuery);
+  const updateQuotation = useMutation(updateQuotationQuery);
+  const getQuotation = useQuery(getQuotationQuery);
+  const getMessages = useQuery(getMessagesQuery);
+  const getCostEntries = useQuery(getCostEntriesQuery);
+  const getTasks = useQuery(getTasksQuery);
+  const addMessageMutation = useMutation(addMessageQuery);
+  const addCostEntryMutation = useMutation(addCostEntryQuery);
+  const createTaskMutation = useMutation(createTaskQuery);
+  const updateTaskMutation = useMutation(updateTaskQuery);
+  const completeTaskMutation = useMutation(completeTaskQuery);
+  const deleteTaskMutation = useMutation(deleteTaskQuery);
 
   // Load quotation from Convex on mount if ID exists in localStorage
   useEffect(() => {

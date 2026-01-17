@@ -69,10 +69,9 @@ const ProductionDashboardView: React.FC = () => {
     fetchProductionProjects();
   }, []);
 
-  // Fetch sales projects from Convex (accepted quotations)
-  const salesProjects = useQuery(
-    api?.quotations?.listQuotations ? api.quotations.listQuotations : null
-  ) as Doc<"quotations">[] | undefined;
+  // Fetch sales projects from Convex (accepted quotations) - safely check api structure
+  const salesProjectsQuery = (api && api.quotations && api.quotations.listQuotations) ? api.quotations.listQuotations : undefined;
+  const salesProjects = useQuery(salesProjectsQuery) as Doc<"quotations">[] | undefined;
   
   // Filter accepted quotations
   const acceptedSalesProjects = salesProjects?.filter(q => q.status === 'accepted') || [];

@@ -36,7 +36,9 @@ export function useCustomers(options: UseCustomersOptions = {}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const getCustomersAction = useAction(api?.thingService?.getCustomers);
+  // Safely get the action - ensure api and nested properties exist
+  const getCustomersActionQuery = (api && api.thingService && api.thingService.getCustomers) ? api.thingService.getCustomers : undefined;
+  const getCustomersAction = useAction(getCustomersActionQuery);
 
   useEffect(() => {
     if (!enabled || !isConvexConfigured || !getCustomersAction) {
