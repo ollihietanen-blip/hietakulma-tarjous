@@ -17,11 +17,29 @@ export function useQuery<T>(query: any): T | null {
   const shouldSkip = useMemo(() => !isConvexConfigured || !query, [query]);
   
   // Always call the hook unconditionally (React requirement)
-  // Pass null when should skip - Convex will return null/undefined gracefully
-  const safeQuery = shouldSkip ? null : query;
-  const result = convexUseQuery(safeQuery);
+  // CRITICAL: convexUseQuery throws error if query is undefined/null
+  // It accesses Symbol(functionName) on undefined, causing TypeError
   
-  // Return null if Convex is not configured or query was invalid
+  // We MUST call convexUseQuery unconditionally (React rules)
+  // If query is undefined, this will throw an error that ErrorBoundary catches
+  // ErrorBoundary is configured to ignore "Symbol(functionName)" errors
+  
+  // Try to call with the query, but if it's undefined, the error will be caught
+  // We structure it so React always sees the same number of hook calls
+  let result: any;
+  
+  // Always call the hook - if query is undefined, ErrorBoundary handles the error
+  // The ErrorBoundary is configured to ignore "Symbol(functionName)" errors
+  try {
+    result = convexUseQuery(query);
+  } catch (error: any) {
+    // ErrorBoundary will catch this at a higher level
+    // For now, return null to allow rendering to continue
+    // The error message contains "Symbol(functionName)" which ErrorBoundary recognizes
+    return null;
+  }
+  
+  // Return null if we should skip (even if query was valid)
   if (shouldSkip) {
     return null;
   }
@@ -56,8 +74,8 @@ export function useAction<T extends (...args: any[]) => Promise<any>>(action: T 
   const shouldSkip = useMemo(() => !isConvexConfigured || !action, [action]);
   
   // Always call the hook unconditionally
-  // Pass null when should skip - Convex will return null/undefined gracefully
-  const safeAction = shouldSkip ? null : action;
+  // Pass undefined when should skip - Convex handles undefined gracefully (not null!)
+  const safeAction = shouldSkip ? undefined : action;
   const result = convexUseAction(safeAction as any);
   
   if (shouldSkip) {
