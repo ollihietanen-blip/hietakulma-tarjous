@@ -17,7 +17,25 @@ class ErrorBoundary extends Component<Props, State> {
   };
 
   public static getDerivedStateFromError(error: Error): State {
-    // Update state so the next render will show the fallback UI
+    // Check if it's a Convex error - if so, don't set error state (app works without Convex)
+    const errorMessage = error?.message || '';
+    const isConvexError = errorMessage.includes('ConvexProvider') || 
+          errorMessage.includes('Convex client') ||
+          errorMessage.includes('useMutation') ||
+          errorMessage.includes('useQuery') ||
+          errorMessage.includes('useAction') ||
+          errorMessage.includes('Cannot read properties of null') ||
+          errorMessage.includes('Cannot read properties of undefined') ||
+          errorMessage.includes('Symbol(functionName)') ||
+          errorMessage.includes('is not a functionReference') ||
+          errorMessage.includes('functionReference');
+    
+    // For Convex errors, don't set error state - let the app continue
+    if (isConvexError) {
+      return { hasError: false, error: null };
+    }
+    
+    // For other errors, show the error UI
     return { hasError: true, error };
   }
 
@@ -40,22 +58,6 @@ class ErrorBoundary extends Component<Props, State> {
 
   public render() {
     if (this.state.hasError) {
-      // If it's a Convex error, render children anyway (app works without Convex)
-      const errorMessage = this.state.error?.message || '';
-      if (errorMessage.includes('ConvexProvider') || 
-          errorMessage.includes('Convex client') ||
-          errorMessage.includes('useMutation') ||
-          errorMessage.includes('useQuery') ||
-          errorMessage.includes('useAction') ||
-          errorMessage.includes('Cannot read properties of null') ||
-          errorMessage.includes('Cannot read properties of undefined') ||
-          errorMessage.includes('Symbol(functionName)') ||
-          errorMessage.includes('is not a functionReference') ||
-          errorMessage.includes('functionReference')) {
-        // Reset error state and render children - app will work without Convex
-        this.setState({ hasError: false, error: null });
-        return this.props.children;
-      }
       
       // For other errors, show fallback with better styling
       return this.props.fallback || (
