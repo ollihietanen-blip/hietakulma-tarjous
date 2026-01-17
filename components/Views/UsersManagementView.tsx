@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { api } from '../../convex/_generated/api.js';
 import { isConvexConfigured } from '../../lib/convexClient';
 import { useQuery, useMutation } from '../../lib/convexHooks';
@@ -6,11 +6,24 @@ import { Id } from '../../convex/_generated/dataModel';
 import { Plus, Edit2, Trash2, Save, X, UserCheck, UserX } from 'lucide-react';
 
 const UsersManagementView: React.FC = () => {
-  // Safely get queries - ensure api and nested properties exist
-  const usersQuery = (api && api.users && api.users.listUsers) ? api.users.listUsers : undefined;
-  const createUserQuery = (api && api.users && api.users.createUser) ? api.users.createUser : undefined;
-  const updateUserQuery = (api && api.users && api.users.updateUser) ? api.users.updateUser : undefined;
-  const deleteUserQuery = (api && api.users && api.users.deleteUser) ? api.users.deleteUser : undefined;
+  // Safely get queries - ensure api and nested properties exist, wrap in useMemo for stability
+  // IMPORTANT: Queries must be stable to ensure consistent hook order in useQuery/useMutation wrappers
+  const usersQuery = useMemo(() => 
+    (api && api.users && api.users.listUsers) ? api.users.listUsers : null,
+    [api?.users?.listUsers]
+  );
+  const createUserQuery = useMemo(() => 
+    (api && api.users && api.users.createUser) ? api.users.createUser : null,
+    [api?.users?.createUser]
+  );
+  const updateUserQuery = useMemo(() => 
+    (api && api.users && api.users.updateUser) ? api.users.updateUser : null,
+    [api?.users?.updateUser]
+  );
+  const deleteUserQuery = useMemo(() => 
+    (api && api.users && api.users.deleteUser) ? api.users.deleteUser : null,
+    [api?.users?.deleteUser]
+  );
   
   const users = useQuery(usersQuery) || [];
   const createUser = useMutation(createUserQuery);

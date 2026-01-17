@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAction } from '../lib/convexHooks';
 import { api } from '../convex/_generated/api';
 import { isConvexConfigured } from '../lib/convexClient';
@@ -36,8 +36,12 @@ export function useCustomers(options: UseCustomersOptions = {}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Safely get the action - ensure api and nested properties exist
-  const getCustomersActionQuery = (api && api.thingService && api.thingService.getCustomers) ? api.thingService.getCustomers : undefined;
+  // Safely get the action - ensure api and nested properties exist, wrap in useMemo for stability
+  // IMPORTANT: Query must be stable to ensure consistent hook order in useAction wrapper
+  const getCustomersActionQuery = useMemo(() => 
+    (api && api.thingService && api.thingService.getCustomers) ? api.thingService.getCustomers : null,
+    [api?.thingService?.getCustomers]
+  );
   const getCustomersAction = useAction(getCustomersActionQuery);
 
   useEffect(() => {

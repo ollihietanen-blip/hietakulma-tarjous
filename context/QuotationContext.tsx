@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useMemo } from 'react';
 import { api } from '../convex/_generated/api.js';
 import { useMutation, useQuery } from '../lib/convexHooks';
 import { Id } from '../convex/_generated/dataModel';
@@ -395,19 +395,56 @@ export const QuotationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Convex hooks (only used if Convex is configured)
-  // Safely access api object to prevent "Cannot read properties of null" errors
-  const createQuotationQuery = (api && api.quotations && api.quotations.createQuotation) ? api.quotations.createQuotation : undefined;
-  const updateQuotationQuery = (api && api.quotations && api.quotations.updateQuotation) ? api.quotations.updateQuotation : undefined;
-  const getQuotationQuery = (api && api.quotations && api.quotations.getQuotation && isConvexConfigured && convexQuotationId) ? api.quotations.getQuotation : undefined;
-  const getMessagesQuery = (api && api.messages && api.messages.getMessages && isConvexConfigured && convexQuotationId) ? api.messages.getMessages : undefined;
-  const getCostEntriesQuery = (api && api.costEntries && api.costEntries.getCostEntries && isConvexConfigured && convexQuotationId) ? api.costEntries.getCostEntries : undefined;
-  const getTasksQuery = (api && api.communicationTasks && api.communicationTasks.getTasks && isConvexConfigured && convexQuotationId) ? api.communicationTasks.getTasks : undefined;
-  const addMessageQuery = (api && api.messages && api.messages.addMessage) ? api.messages.addMessage : undefined;
-  const addCostEntryQuery = (api && api.costEntries && api.costEntries.addCostEntry) ? api.costEntries.addCostEntry : undefined;
-  const createTaskQuery = (api && api.communicationTasks && api.communicationTasks.createTask) ? api.communicationTasks.createTask : undefined;
-  const updateTaskQuery = (api && api.communicationTasks && api.communicationTasks.updateTask) ? api.communicationTasks.updateTask : undefined;
-  const completeTaskQuery = (api && api.communicationTasks && api.communicationTasks.completeTask) ? api.communicationTasks.completeTask : undefined;
-  const deleteTaskQuery = (api && api.communicationTasks && api.communicationTasks.deleteTask) ? api.communicationTasks.deleteTask : undefined;
+  // Use useMemo to ensure queries are stable and prevent hook order violations
+  // IMPORTANT: Queries must be stable to satisfy React's Rules of Hooks
+  const createQuotationQuery = useMemo(() => 
+    (api && api.quotations && api.quotations.createQuotation) ? api.quotations.createQuotation : null,
+    [api?.quotations?.createQuotation]
+  );
+  const updateQuotationQuery = useMemo(() => 
+    (api && api.quotations && api.quotations.updateQuotation) ? api.quotations.updateQuotation : null,
+    [api?.quotations?.updateQuotation]
+  );
+  const getQuotationQuery = useMemo(() => 
+    (api && api.quotations && api.quotations.getQuotation && isConvexConfigured && convexQuotationId) ? api.quotations.getQuotation : null,
+    [api?.quotations?.getQuotation, isConvexConfigured, convexQuotationId]
+  );
+  const getMessagesQuery = useMemo(() => 
+    (api && api.messages && api.messages.getMessages && isConvexConfigured && convexQuotationId) ? api.messages.getMessages : null,
+    [api?.messages?.getMessages, isConvexConfigured, convexQuotationId]
+  );
+  const getCostEntriesQuery = useMemo(() => 
+    (api && api.costEntries && api.costEntries.getCostEntries && isConvexConfigured && convexQuotationId) ? api.costEntries.getCostEntries : null,
+    [api?.costEntries?.getCostEntries, isConvexConfigured, convexQuotationId]
+  );
+  const getTasksQuery = useMemo(() => 
+    (api && api.communicationTasks && api.communicationTasks.getTasks && isConvexConfigured && convexQuotationId) ? api.communicationTasks.getTasks : null,
+    [api?.communicationTasks?.getTasks, isConvexConfigured, convexQuotationId]
+  );
+  const addMessageQuery = useMemo(() => 
+    (api && api.messages && api.messages.addMessage) ? api.messages.addMessage : null,
+    [api?.messages?.addMessage]
+  );
+  const addCostEntryQuery = useMemo(() => 
+    (api && api.costEntries && api.costEntries.addCostEntry) ? api.costEntries.addCostEntry : null,
+    [api?.costEntries?.addCostEntry]
+  );
+  const createTaskQuery = useMemo(() => 
+    (api && api.communicationTasks && api.communicationTasks.createTask) ? api.communicationTasks.createTask : null,
+    [api?.communicationTasks?.createTask]
+  );
+  const updateTaskQuery = useMemo(() => 
+    (api && api.communicationTasks && api.communicationTasks.updateTask) ? api.communicationTasks.updateTask : null,
+    [api?.communicationTasks?.updateTask]
+  );
+  const completeTaskQuery = useMemo(() => 
+    (api && api.communicationTasks && api.communicationTasks.completeTask) ? api.communicationTasks.completeTask : null,
+    [api?.communicationTasks?.completeTask]
+  );
+  const deleteTaskQuery = useMemo(() => 
+    (api && api.communicationTasks && api.communicationTasks.deleteTask) ? api.communicationTasks.deleteTask : null,
+    [api?.communicationTasks?.deleteTask]
+  );
   
   const createQuotation = useMutation(createQuotationQuery);
   const updateQuotation = useMutation(updateQuotationQuery);

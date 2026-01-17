@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { QuotationProvider } from './context/QuotationContext';
 import Sidebar from './components/Layout/Sidebar';
 import DashboardHome from './components/Views/DashboardHome';
@@ -34,8 +34,13 @@ function App() {
     return stored as Id<"users"> | null;
   });
   
-  // Safely get the query - ensure api and nested properties exist
-  const usersQuery = (api && api.users && api.users.listUsers) ? api.users.listUsers : undefined;
+  // Safely get the query - ensure api and nested properties exist, wrap in useMemo for stability
+  // IMPORTANT: Query must be stable to ensure consistent hook order in useQuery wrapper
+  const usersQuery = useMemo(() => 
+    (api && api.users && api.users.listUsers) ? api.users.listUsers : null,
+    [api?.users?.listUsers]
+  );
+  
   const users = useQuery(usersQuery);
   const currentUser = users?.find(u => u._id === currentUserId) || users?.find(u => u.active) || null;
   

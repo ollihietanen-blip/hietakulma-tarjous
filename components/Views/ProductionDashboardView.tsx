@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Factory, Package, Calendar, MapPin, Clock, TrendingUp, Search, Filter, ArrowUpRight, CheckCircle, AlertCircle, Users } from 'lucide-react';
 import { externalApi } from '../../services/externalApi';
 import { api } from '../../convex/_generated/api';
@@ -70,7 +70,11 @@ const ProductionDashboardView: React.FC = () => {
   }, []);
 
   // Fetch sales projects from Convex (accepted quotations) - safely check api structure
-  const salesProjectsQuery = (api && api.quotations && api.quotations.listQuotations) ? api.quotations.listQuotations : undefined;
+  // IMPORTANT: Query must be stable to ensure consistent hook order in useQuery wrapper
+  const salesProjectsQuery = useMemo(() => 
+    (api && api.quotations && api.quotations.listQuotations) ? api.quotations.listQuotations : null,
+    [api?.quotations?.listQuotations]
+  );
   const salesProjects = useQuery(salesProjectsQuery) as Doc<"quotations">[] | undefined;
   
   // Filter accepted quotations

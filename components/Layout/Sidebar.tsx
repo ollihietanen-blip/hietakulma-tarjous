@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
 import { LayoutDashboard, Calculator, FileText, Users, LogOut, ChevronRight, KanbanSquare, X, PieChart, RefreshCw, FolderCog, Triangle, Box, ChevronDown, ListTree, Calendar, FileSignature, UserCog, Factory } from 'lucide-react';
 import { UserRole } from '../../App';
@@ -28,8 +28,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
     return stored as Id<"users"> | null;
   });
   
-  // Fetch all users from database - safely check api structure
-  const usersQuery = (api && api.users && api.users.listUsers) ? api.users.listUsers : undefined;
+  // Fetch all users from database - safely check api structure, wrap in useMemo for stability
+  // IMPORTANT: Query must be stable to ensure consistent hook order in useQuery wrapper
+  const usersQuery = useMemo(() => 
+    (api && api.users && api.users.listUsers) ? api.users.listUsers : null,
+    [api?.users?.listUsers]
+  );
+  
   const users = useQuery(usersQuery);
   
   // Find current user
