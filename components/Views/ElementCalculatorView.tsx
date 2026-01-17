@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
 import Breadcrumb from '../Layout/Breadcrumb';
-import { ArrowRight, Ruler, Home, Box, Layers, PenTool, CheckCircle, Upload, FileText, X, Sparkles, Loader2, AlertCircle, Plus } from 'lucide-react';
+import { ArrowRight, Ruler, Home, Box, Layers, PenTool, CheckCircle, Upload, FileText, X, Sparkles, Loader2, AlertCircle, Plus, Calculator, Building2, DollarSign } from 'lucide-react';
 import { useAction } from 'convex/react';
 import { isConvexConfigured } from '../../lib/convexClient';
 
@@ -52,6 +52,87 @@ interface AIAnalysisResult {
   questions?: AIQuestion[]; // Kysymykset A/B/C -vaihtoehdoilla
 }
 
+// Sähköinen määrälaskentalomake - uudet tyypit
+interface ElementOpening {
+  id: string;
+  type: 'ikkuna' | 'ovi' | 'muu';
+  quantity: number;
+  area: number; // m² per kpl
+  description?: string;
+}
+
+interface ElementBeam {
+  id: string;
+  dimensions: string; // esim. "90x90", "115x115"
+  quantity: number;
+  description?: string;
+}
+
+interface QuantityElement {
+  id: string;
+  elementType: string; // esim. "US-198", "US-148"
+  elementCount: number; // ELEMENTTIEN MÄÄRÄ
+  packages: number; // PAKETIT
+  openings: ElementOpening[];
+  beams: ElementBeam[];
+  description?: string;
+}
+
+interface NettoWallAreas {
+  usSuora: number; // m²
+  usVino: number; // m²
+  varasto: number; // m²
+  valiseinat: number; // m²
+  hvs: number; // m²
+}
+
+interface StructuralParts {
+  raystaselementit: { quantity: number; unit: 'jm' | 'kpl' };
+  villanpidatyslevy: number; // m²
+  sivuraystat: number; // jm
+  panelointi: number; // m²
+  panelointiPaadyt: number; // m²
+  maalaus: number; // m²
+  katonNelio: number; // m²
+  terassit: number; // m²
+  nurkkalaudatJaSaumat: number; // jm
+  sisanurkat: number; // €/KPL
+  ristikot: number; // kpl
+  palokatkot: { quantity: number; unit: 'jm' | 'kpl' };
+  paadyt: number; // kpl
+  pilarit: {
+    pilarit90x90: number; // kpl
+    pilarit115x115: number; // kpl
+    pilarit140x140: number; // kpl
+  };
+}
+
+interface SpecialProducts {
+  palkit: Array<{ id: string; dimensions: string; quantity: number }>;
+  ylapohja: {
+    puhallusvilla: number; // m²
+    levyvilla100mm: number; // m²
+    hoyrynsulku: number; // m²
+    koolaus: number; // m²
+    mdfLevyKipsilevy: number; // m²
+  };
+  valiseina: {
+    alaJaYlapuu: number; // jm (42x66)
+    kpTolppa: number; // kpl (39x66)
+    eriste50mm: number; // m²
+    kipsilevy: number; // m²
+  };
+  rahti: number; // €
+}
+
+interface Pricing {
+  asennus: number; // €
+  elementMaalaus: number; // €
+  ristikot: number; // €
+  suunnittelu: number; // €
+  tukityot: number; // €
+}
+
 const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplete }) => {
   const { addElement, quotation, saveQuotation } = useQuotation();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -100,14 +181,133 @@ const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplet
     wallElements: true, // Default selected
   });
 
+  // Sähköinen määrälaskentalomake - state-tilat
+  const [showElectricForm, setShowElectricForm] = useState(false); // Näytetäänkö sähköinen lomake
+  const [basicInfo, setBasicInfo] = useState({
+    customer: '',
+    address: '',
+    hvs: 0,
+    us1: 0,
+    us2: 0,
+    us3: 0,
+    total: 0,
+    area: '' // Piiri
+  });
 
-  // Calculations
+  // Elementit (dynaamiset)
+  const [quantityElements, setQuantityElements] = useState<QuantityElement[]>([
+    {
+      id: '1',
+      elementType: 'US-198',
+      elementCount: 1,
+      packages: 1,
+      openings: [],
+      beams: [],
+      description: ''
+    }
+  ]);
+
+  // Netto seinäneliöt
+  const [nettoWallAreas, setNettoWallAreas] = useState<NettoWallAreas>({
+    usSuora: 0,
+    usVino: 0,
+    varasto: 0,
+    valiseinat: 0,
+    hvs: 0
+  });
+
+  // Rakenneosat
+  const [structuralParts, setStructuralParts] = useState<StructuralParts>({
+    raystaselementit: { quantity: 0, unit: 'jm' },
+    villanpidatyslevy: 0,
+    sivuraystat: 0,
+    panelointi: 0,
+    panelointiPaadyt: 0,
+    maalaus: 0,
+    katonNelio: 0,
+    terassit: 0,
+    nurkkalaudatJaSaumat: 0,
+    sisanurkat: 0,
+    ristikot: 0,
+    palokatkot: { quantity: 0, unit: 'jm' },
+    paadyt: 0,
+    pilarit: {
+      pilarit90x90: 0,
+      pilarit115x115: 0,
+      pilarit140x140: 0
+    }
+  });
+
+  // Erityistuotteet
+  const [specialProducts, setSpecialProducts] = useState<SpecialProducts>({
+    palkit: [],
+    ylapohja: {
+      puhallusvilla: 0,
+      levyvilla100mm: 0,
+      hoyrynsulku: 0,
+      koolaus: 0,
+      mdfLevyKipsilevy: 0
+    },
+    valiseina: {
+      alaJaYlapuu: 0,
+      kpTolppa: 0,
+      eriste50mm: 0,
+      kipsilevy: 0
+    },
+    rahti: 0
+  });
+
+  // Hintalaskenta
+  const [pricing, setPricing] = useState<Pricing>({
+    asennus: 0,
+    elementMaalaus: 0,
+    ristikot: 0,
+    suunnittelu: 0,
+    tukityot: 0
+  });
+
+  // Keskiarvoinen aukko-koko (käytetään AUKOT YHTEENSÄ laskennassa)
+  const AVERAGE_OPENING_SIZE = 1.5; // m²
+
+  // Calculations - Vanha lomake
   const perimeter = (dims.width + dims.length) * 2;
   const wallAreaGross = perimeter * dims.height * dims.floors;
   const totalOpeningArea = openings.reduce((sum, opening) => sum + (opening.area * opening.quantity), 0);
   const wallAreaNet = wallAreaGross - totalOpeningArea;
   const floorArea = dims.width * dims.length * dims.floors;
   const totalOpeningCount = openings.reduce((sum, opening) => sum + opening.quantity, 0);
+
+  // Calculations - Sähköinen lomake
+  // Pääelementit - automaattiset laskennat
+  const calculateElementsBrutto = (element: QuantityElement) => {
+    return element.elementCount * element.packages;
+  };
+
+  const calculateTotalElementsBrutto = () => {
+    return quantityElements.reduce((sum, el) => sum + calculateElementsBrutto(el), 0);
+  };
+
+  // Aukot yhteensä per elementti
+  const calculateElementOpeningsTotal = (element: QuantityElement) => {
+    const openingsArea = element.openings.reduce((sum, o) => sum + (o.area * o.quantity), 0);
+    const windowsCount = element.openings.filter(o => o.type === 'ikkuna').reduce((sum, o) => sum + o.quantity, 0);
+    const doorsCount = element.openings.filter(o => o.type === 'ovi').reduce((sum, o) => sum + o.quantity, 0);
+    const averageOpeningArea = (windowsCount + doorsCount) * AVERAGE_OPENING_SIZE;
+    return openingsArea + averageOpeningArea;
+  };
+
+  // Netto seinäneliöt yhteensä
+  const calculateNettoWallAreasTotal = () => {
+    const total = nettoWallAreas.usSuora + nettoWallAreas.usVino + nettoWallAreas.varasto + 
+                  nettoWallAreas.valiseinat + nettoWallAreas.hvs;
+    const totalOpeningsArea = quantityElements.reduce((sum, el) => sum + calculateElementOpeningsTotal(el), 0);
+    return Math.max(0, total - totalOpeningsArea);
+  };
+
+  // Hintalaskenta - yhteensä
+  const calculateTotalPrice = () => {
+    return pricing.asennus + pricing.elementMaalaus + pricing.ristikot + pricing.suunnittelu + pricing.tukityot;
+  };
 
   // File handling
   const handleFileSelect = (files: FileList | null) => {
@@ -607,6 +807,158 @@ Ole tarkka mitoissa ja anna realistisia määriä.
     }
   };
 
+  // Sähköinen lomake - elementtien hallinta
+  const addQuantityElement = () => {
+    const newElement: QuantityElement = {
+      id: Date.now().toString(),
+      elementType: 'US-198',
+      elementCount: 1,
+      packages: 1,
+      openings: [],
+      beams: [],
+      description: ''
+    };
+    setQuantityElements([...quantityElements, newElement]);
+  };
+
+  const removeQuantityElement = (id: string) => {
+    if (quantityElements.length > 1) {
+      setQuantityElements(quantityElements.filter(el => el.id !== id));
+    } else {
+      alert('Vähintään yksi elementti vaaditaan.');
+    }
+  };
+
+  const updateQuantityElement = (id: string, updates: Partial<QuantityElement>) => {
+    setQuantityElements(quantityElements.map(el => 
+      el.id === id ? { ...el, ...updates } : el
+    ));
+  };
+
+  // Aukkojen hallinta elementtiin
+  const addOpeningToElement = (elementId: string) => {
+    const newOpening: ElementOpening = {
+      id: Date.now().toString(),
+      type: 'ikkuna',
+      quantity: 1,
+      area: 1.5,
+      description: ''
+    };
+    updateQuantityElement(elementId, {
+      openings: [...quantityElements.find(el => el.id === elementId)!.openings, newOpening]
+    });
+  };
+
+  const removeOpeningFromElement = (elementId: string, openingId: string) => {
+    const element = quantityElements.find(el => el.id === elementId);
+    if (element) {
+      updateQuantityElement(elementId, {
+        openings: element.openings.filter(o => o.id !== openingId)
+      });
+    }
+  };
+
+  const updateOpeningInElement = (elementId: string, openingId: string, updates: Partial<ElementOpening>) => {
+    const element = quantityElements.find(el => el.id === elementId);
+    if (element) {
+      updateQuantityElement(elementId, {
+        openings: element.openings.map(o => 
+          o.id === openingId ? { ...o, ...updates } : o
+        )
+      });
+    }
+  };
+
+  // Palkkien hallinta elementtiin
+  const addBeamToElement = (elementId: string) => {
+    const newBeam: ElementBeam = {
+      id: Date.now().toString(),
+      dimensions: '90x90',
+      quantity: 1,
+      description: ''
+    };
+    updateQuantityElement(elementId, {
+      beams: [...quantityElements.find(el => el.id === elementId)!.beams, newBeam]
+    });
+  };
+
+  const removeBeamFromElement = (elementId: string, beamId: string) => {
+    const element = quantityElements.find(el => el.id === elementId);
+    if (element) {
+      updateQuantityElement(elementId, {
+        beams: element.beams.filter(b => b.id !== beamId)
+      });
+    }
+  };
+
+  const updateBeamInElement = (elementId: string, beamId: string, updates: Partial<ElementBeam>) => {
+    const element = quantityElements.find(el => el.id === elementId);
+    if (element) {
+      updateQuantityElement(elementId, {
+        beams: element.beams.map(b => 
+          b.id === beamId ? { ...b, ...updates } : b
+        )
+      });
+    }
+  };
+
+  // Palkkien hallinta erityistuotteisiin
+  const addSpecialBeam = () => {
+    const newBeam = {
+      id: Date.now().toString(),
+      dimensions: '90x90',
+      quantity: 1
+    };
+    setSpecialProducts({
+      ...specialProducts,
+      palkit: [...specialProducts.palkit, newBeam]
+    });
+  };
+
+  const removeSpecialBeam = (id: string) => {
+    setSpecialProducts({
+      ...specialProducts,
+      palkit: specialProducts.palkit.filter(b => b.id !== id)
+    });
+  };
+
+  // Tallenna sähköinen lomake tarjoukseen
+  const handleSaveElectricForm = () => {
+    // Lisää elementit tarjoukseen
+    quantityElements.forEach(element => {
+      const brutto = calculateElementsBrutto(element);
+      const openingsArea = calculateElementOpeningsTotal(element);
+      
+      addElement('section-ext-walls', {
+        type: `Ulkoseinä ${element.elementType} (Sähköinen lomake)`,
+        description: element.description || `Elementtejä: ${element.elementCount}, Paketteja: ${element.packages}, Brutto: ${brutto}, Aukkoja: ${openingsArea.toFixed(1)}m²`,
+        specifications: {
+          elementType: element.elementType,
+          elementCount: `${element.elementCount}`,
+          packages: `${element.packages}`,
+        },
+        quantity: brutto,
+        unit: 'kpl',
+        unitPrice: 450,
+        netArea: 0,
+        hasWindowInstall: element.openings.length > 0,
+        windowCount: element.openings.reduce((sum, o) => sum + o.quantity, 0),
+        windowInstallPrice: 45
+      });
+    });
+
+    // Lisää hintalaskenta
+    const totalPrice = calculateTotalPrice();
+    if (totalPrice > 0) {
+      // Tallenna hintatiedot quotationiin (voi vaatia QuotationContextin laajennusta)
+      alert(`Sähköinen lomake tallennettu! Yhteishinta: ${totalPrice.toFixed(2)} €`);
+    } else {
+      alert('Elementit lisätty tarjoukseen!');
+    }
+
+    onComplete();
+  };
+
   const inputClass = "w-full bg-white border border-slate-300 text-slate-900 rounded-lg p-3 font-medium focus:border-hieta-blue focus:ring-2 focus:ring-hieta-blue/20 outline-none transition-all card-shadow";
   const labelClass = "block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2";
 
@@ -623,14 +975,899 @@ Ole tarkka mitoissa ja anna realistisia määriä.
         />
       </div>
       <div className="mb-8 border-b border-slate-200 pb-6">
-        <h1 className="text-3xl font-display font-bold text-slate-900 flex items-center gap-3">
-            <Box className="text-hieta-blue" /> Puuelementtilaskenta
-        </h1>
-        <p className="text-slate-500 mt-2 max-w-2xl">
-            Syötä rakennuksen päämitat tai lataa piirustukset AI-analysoitavaksi. Järjestelmä laskee arvion seinäelementtien menekistä ja lisää ne tarjoukseen.
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-display font-bold text-slate-900 flex items-center gap-3">
+                <Box className="text-hieta-blue" /> Puuelementtilaskenta
+            </h1>
+            <p className="text-slate-500 mt-2 max-w-2xl">
+                Syötä rakennuksen päämitat tai lataa piirustukset AI-analysoitavaksi. Järjestelmä laskee arvion seinäelementtien menekistä ja lisää ne tarjoukseen.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowElectricForm(!showElectricForm)}
+            className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center gap-2 ${
+              showElectricForm
+                ? 'bg-hieta-blue text-white hover:bg-hieta-blue/90'
+                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+            }`}
+          >
+            <Calculator size={18} />
+            {showElectricForm ? 'Palaa perusnäkymään' : 'Sähköinen määrälaskentalomake'}
+          </button>
+        </div>
       </div>
 
+      {/* Sähköinen määrälaskentalomake */}
+      {showElectricForm ? (
+        <div className="space-y-6">
+          {/* 1. Perustiedot */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 card-shadow">
+            <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
+              <FileText className="text-blue-600" /> Perustiedot
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Asiakas</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={basicInfo.customer}
+                  onChange={e => setBasicInfo({ ...basicInfo, customer: e.target.value })}
+                  placeholder="Asiakkaan nimi"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Osoite</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={basicInfo.address}
+                  onChange={e => setBasicInfo({ ...basicInfo, address: e.target.value })}
+                  placeholder="Osoite"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Piiri</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={basicInfo.area}
+                  onChange={e => setBasicInfo({ ...basicInfo, area: e.target.value })}
+                  placeholder="esim. rakennuksen osa/sijainti"
+                />
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                <div>
+                  <label className={labelClass}>HVS (€)</label>
+                  <input
+                    type="number"
+                    className={inputClass}
+                    value={basicInfo.hvs}
+                    onChange={e => {
+                      const val = Number(e.target.value);
+                      setBasicInfo({
+                        ...basicInfo,
+                        hvs: val,
+                        total: val + basicInfo.us1 + basicInfo.us2 + basicInfo.us3
+                      });
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>US1 (€)</label>
+                  <input
+                    type="number"
+                    className={inputClass}
+                    value={basicInfo.us1}
+                    onChange={e => {
+                      const val = Number(e.target.value);
+                      setBasicInfo({
+                        ...basicInfo,
+                        us1: val,
+                        total: basicInfo.hvs + val + basicInfo.us2 + basicInfo.us3
+                      });
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>US2 (€)</label>
+                  <input
+                    type="number"
+                    className={inputClass}
+                    value={basicInfo.us2}
+                    onChange={e => {
+                      const val = Number(e.target.value);
+                      setBasicInfo({
+                        ...basicInfo,
+                        us2: val,
+                        total: basicInfo.hvs + basicInfo.us1 + val + basicInfo.us3
+                      });
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>US3 (€)</label>
+                  <input
+                    type="number"
+                    className={inputClass}
+                    value={basicInfo.us3}
+                    onChange={e => {
+                      const val = Number(e.target.value);
+                      setBasicInfo({
+                        ...basicInfo,
+                        us3: val,
+                        total: basicInfo.hvs + basicInfo.us1 + basicInfo.us2 + val
+                      });
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Yhteensä (€)</label>
+                  <div className="px-4 py-3 bg-slate-100 border border-slate-300 rounded-lg font-bold text-slate-900">
+                    {basicInfo.total.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Pääelementit */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 card-shadow">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
+                <Box className="text-purple-600" /> Pääelementit (Automaattinen laskenta)
+              </h3>
+              <button
+                onClick={addQuantityElement}
+                className="text-xs font-bold text-hieta-blue hover:text-hieta-blue/80 flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+              >
+                <Plus size={14} /> Lisää elementti
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {quantityElements.map((element, idx) => (
+                <div key={element.id} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-bold text-slate-900">Elementti {idx + 1}</h4>
+                    {quantityElements.length > 1 && (
+                      <button
+                        onClick={() => removeQuantityElement(element.id)}
+                        className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                      >
+                        <X size={18} />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <label className={labelClass}>Elementin tyyppi</label>
+                      <select
+                        className={inputClass}
+                        value={element.elementType}
+                        onChange={e => updateQuantityElement(element.id, { elementType: e.target.value })}
+                      >
+                        <option value="US-198">US-198</option>
+                        <option value="US-148">US-148</option>
+                        <option value="US-173">US-173</option>
+                        <option value="US-223">US-223</option>
+                        <option value="HVS">HVS</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelClass}>ELEMENTTIEN MÄÄRÄ (kpl)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        className={inputClass}
+                        value={element.elementCount}
+                        onChange={e => updateQuantityElement(element.id, { elementCount: Number(e.target.value) })}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass}>PAKETIT (kpl)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        className={inputClass}
+                        value={element.packages}
+                        onChange={e => updateQuantityElement(element.id, { packages: Number(e.target.value) })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-slate-700">ELEMENTIT/BRUTTO:</span>
+                      <span className="font-bold text-blue-900">{calculateElementsBrutto(element)} kpl</span>
+                    </div>
+                  </div>
+
+                  {/* Aukot elementille */}
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-bold text-slate-700">Aukot</label>
+                      <button
+                        onClick={() => addOpeningToElement(element.id)}
+                        className="text-xs text-hieta-blue hover:text-hieta-blue/80 flex items-center gap-1"
+                      >
+                        <Plus size={12} /> Lisää aukko
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {element.openings.map(opening => (
+                        <div key={opening.id} className="flex gap-2 items-end">
+                          <select
+                            className="flex-1 p-2 border border-slate-300 rounded text-sm"
+                            value={opening.type}
+                            onChange={e => updateOpeningInElement(element.id, opening.id, { type: e.target.value as any })}
+                          >
+                            <option value="ikkuna">Ikkuna</option>
+                            <option value="ovi">Ovi</option>
+                            <option value="muu">Muu</option>
+                          </select>
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Määrä"
+                            className="w-20 p-2 border border-slate-300 rounded text-sm"
+                            value={opening.quantity}
+                            onChange={e => updateOpeningInElement(element.id, opening.id, { quantity: Number(e.target.value) })}
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            placeholder="m²"
+                            className="w-24 p-2 border border-slate-300 rounded text-sm"
+                            value={opening.area}
+                            onChange={e => updateOpeningInElement(element.id, opening.id, { area: Number(e.target.value) })}
+                          />
+                          <button
+                            onClick={() => removeOpeningFromElement(element.id, opening.id)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ))}
+                      <div className="p-2 bg-amber-50 rounded border border-amber-200">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-slate-700">AUKOT YHTEENSÄ:</span>
+                          <span className="font-bold text-amber-900">{calculateElementOpeningsTotal(element).toFixed(1)} m²</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Palkit elementille */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-bold text-slate-700">Palkit</label>
+                      <button
+                        onClick={() => addBeamToElement(element.id)}
+                        className="text-xs text-hieta-blue hover:text-hieta-blue/80 flex items-center gap-1"
+                      >
+                        <Plus size={12} /> Lisää palkki
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {element.beams.map(beam => (
+                        <div key={beam.id} className="flex gap-2 items-end">
+                          <input
+                            type="text"
+                            placeholder="Dimensiot"
+                            className="flex-1 p-2 border border-slate-300 rounded text-sm"
+                            value={beam.dimensions}
+                            onChange={e => updateBeamInElement(element.id, beam.id, { dimensions: e.target.value })}
+                          />
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Määrä"
+                            className="w-24 p-2 border border-slate-300 rounded text-sm"
+                            value={beam.quantity}
+                            onChange={e => updateBeamInElement(element.id, beam.id, { quantity: Number(e.target.value) })}
+                          />
+                          <button
+                            onClick={() => removeBeamFromElement(element.id, beam.id)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-slate-700">ELEMENTIT/BRUTTO YHTEENSÄ:</span>
+                  <span className="font-bold text-green-900 text-lg">{calculateTotalElementsBrutto()} kpl</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Netto seinäneliöt */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 card-shadow">
+            <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
+              <Ruler className="text-green-600" /> Netto seinäneliöt
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>US suora (m²)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={inputClass}
+                  value={nettoWallAreas.usSuora}
+                  onChange={e => setNettoWallAreas({ ...nettoWallAreas, usSuora: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>US vino (m²)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={inputClass}
+                  value={nettoWallAreas.usVino}
+                  onChange={e => setNettoWallAreas({ ...nettoWallAreas, usVino: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>VARASTO (m²)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={inputClass}
+                  value={nettoWallAreas.varasto}
+                  onChange={e => setNettoWallAreas({ ...nettoWallAreas, varasto: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>VÄLISEINÄT (m²)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={inputClass}
+                  value={nettoWallAreas.valiseinat}
+                  onChange={e => setNettoWallAreas({ ...nettoWallAreas, valiseinat: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>HVS (m²)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={inputClass}
+                  value={nettoWallAreas.hvs}
+                  onChange={e => setNettoWallAreas({ ...nettoWallAreas, hvs: Number(e.target.value) })}
+                />
+              </div>
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-slate-700">NETTO SEINÄNELIÖT:</span>
+                  <span className="font-bold text-green-900 text-lg">{calculateNettoWallAreasTotal().toFixed(1)} m²</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Rakenneosat */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 card-shadow">
+            <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
+              <Building2 className="text-orange-600" /> Rakenneosat
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>RÄYSTÄSELEMENTIT ({structuralParts.raystaselementit.unit})</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    className={inputClass}
+                    value={structuralParts.raystaselementit.quantity}
+                    onChange={e => setStructuralParts({
+                      ...structuralParts,
+                      raystaselementit: { ...structuralParts.raystaselementit, quantity: Number(e.target.value) }
+                    })}
+                  />
+                  <select
+                    className="w-24 p-3 border border-slate-300 rounded-lg"
+                    value={structuralParts.raystaselementit.unit}
+                    onChange={e => setStructuralParts({
+                      ...structuralParts,
+                      raystaselementit: { ...structuralParts.raystaselementit, unit: e.target.value as 'jm' | 'kpl' }
+                    })}
+                  >
+                    <option value="jm">jm</option>
+                    <option value="kpl">kpl</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>VILLANPIDÄTYSLEVY (m²)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={inputClass}
+                  value={structuralParts.villanpidatyslevy}
+                  onChange={e => setStructuralParts({ ...structuralParts, villanpidatyslevy: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>SIVURÄYSTÄÄT (jm)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={inputClass}
+                  value={structuralParts.sivuraystat}
+                  onChange={e => setStructuralParts({ ...structuralParts, sivuraystat: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>PANELOINTI (m²)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={inputClass}
+                  value={structuralParts.panelointi}
+                  onChange={e => setStructuralParts({ ...structuralParts, panelointi: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>PANELOINTI PÄÄDYT (m²)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={inputClass}
+                  value={structuralParts.panelointiPaadyt}
+                  onChange={e => setStructuralParts({ ...structuralParts, panelointiPaadyt: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>MAALAUS (m²)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={inputClass}
+                  value={structuralParts.maalaus}
+                  onChange={e => setStructuralParts({ ...structuralParts, maalaus: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>KATON NELIÖMÄÄRÄ (m²)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={inputClass}
+                  value={structuralParts.katonNelio}
+                  onChange={e => setStructuralParts({ ...structuralParts, katonNelio: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>TERASSIT (m²)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={inputClass}
+                  value={structuralParts.terassit}
+                  onChange={e => setStructuralParts({ ...structuralParts, terassit: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>NURKKALAUDAT JA SAUMAT (jm)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className={inputClass}
+                  value={structuralParts.nurkkalaudatJaSaumat}
+                  onChange={e => setStructuralParts({ ...structuralParts, nurkkalaudatJaSaumat: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>SISÄNURKAT (€/KPL)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className={inputClass}
+                  value={structuralParts.sisanurkat}
+                  onChange={e => setStructuralParts({ ...structuralParts, sisanurkat: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>RISTIKOT (kpl)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className={inputClass}
+                  value={structuralParts.ristikot}
+                  onChange={e => setStructuralParts({ ...structuralParts, ristikot: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>PALOKATKOT ({structuralParts.palokatkot.unit})</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    className={inputClass}
+                    value={structuralParts.palokatkot.quantity}
+                    onChange={e => setStructuralParts({
+                      ...structuralParts,
+                      palokatkot: { ...structuralParts.palokatkot, quantity: Number(e.target.value) }
+                    })}
+                  />
+                  <select
+                    className="w-24 p-3 border border-slate-300 rounded-lg"
+                    value={structuralParts.palokatkot.unit}
+                    onChange={e => setStructuralParts({
+                      ...structuralParts,
+                      palokatkot: { ...structuralParts.palokatkot, unit: e.target.value as 'jm' | 'kpl' }
+                    })}
+                  >
+                    <option value="jm">jm</option>
+                    <option value="kpl">kpl</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>PÄÄDYT (kpl)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className={inputClass}
+                  value={structuralParts.paadyt}
+                  onChange={e => setStructuralParts({ ...structuralParts, paadyt: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>PILARIT 90x90 (kpl)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className={inputClass}
+                  value={structuralParts.pilarit.pilarit90x90}
+                  onChange={e => setStructuralParts({
+                    ...structuralParts,
+                    pilarit: { ...structuralParts.pilarit, pilarit90x90: Number(e.target.value) }
+                  })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>PILARIT 115x115 (kpl)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className={inputClass}
+                  value={structuralParts.pilarit.pilarit115x115}
+                  onChange={e => setStructuralParts({
+                    ...structuralParts,
+                    pilarit: { ...structuralParts.pilarit, pilarit115x115: Number(e.target.value) }
+                  })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>PILARIT 140x140 (kpl)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className={inputClass}
+                  value={structuralParts.pilarit.pilarit140x140}
+                  onChange={e => setStructuralParts({
+                    ...structuralParts,
+                    pilarit: { ...structuralParts.pilarit, pilarit140x140: Number(e.target.value) }
+                  })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 5. Erityistuotteet */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 card-shadow">
+            <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
+              <Layers className="text-purple-600" /> Erityistuotteet
+            </h3>
+            
+            {/* Palkit */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-bold text-slate-700">PALKIT</label>
+                <button
+                  onClick={addSpecialBeam}
+                  className="text-xs text-hieta-blue hover:text-hieta-blue/80 flex items-center gap-1"
+                >
+                  <Plus size={12} /> Lisää palkki
+                </button>
+              </div>
+              <div className="space-y-2">
+                {specialProducts.palkit.map(beam => (
+                  <div key={beam.id} className="flex gap-2 items-end">
+                    <input
+                      type="text"
+                      placeholder="Dimensiot (esim. 90x90)"
+                      className="flex-1 p-2 border border-slate-300 rounded text-sm"
+                      value={beam.dimensions}
+                      onChange={e => setSpecialProducts({
+                        ...specialProducts,
+                        palkit: specialProducts.palkit.map(b => b.id === beam.id ? { ...b, dimensions: e.target.value } : b)
+                      })}
+                    />
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="Määrä (kpl)"
+                      className="w-24 p-2 border border-slate-300 rounded text-sm"
+                      value={beam.quantity}
+                      onChange={e => setSpecialProducts({
+                        ...specialProducts,
+                        palkit: specialProducts.palkit.map(b => b.id === beam.id ? { ...b, quantity: Number(e.target.value) } : b)
+                      })}
+                    />
+                    <button
+                      onClick={() => removeSpecialBeam(beam.id)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Yläpohja */}
+            <div className="mb-6 p-4 bg-slate-50 rounded-lg">
+              <h4 className="font-bold text-slate-900 mb-3">YLÄPOHJA</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>Puhallusvilla (m²)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    className={inputClass}
+                    value={specialProducts.ylapohja.puhallusvilla}
+                    onChange={e => setSpecialProducts({
+                      ...specialProducts,
+                      ylapohja: { ...specialProducts.ylapohja, puhallusvilla: Number(e.target.value) }
+                    })}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Levyvilla 100 mm (m²)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    className={inputClass}
+                    value={specialProducts.ylapohja.levyvilla100mm}
+                    onChange={e => setSpecialProducts({
+                      ...specialProducts,
+                      ylapohja: { ...specialProducts.ylapohja, levyvilla100mm: Number(e.target.value) }
+                    })}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Höyrynsulku (m²)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    className={inputClass}
+                    value={specialProducts.ylapohja.hoyrynsulku}
+                    onChange={e => setSpecialProducts({
+                      ...specialProducts,
+                      ylapohja: { ...specialProducts.ylapohja, hoyrynsulku: Number(e.target.value) }
+                    })}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Koolaus (m²)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    className={inputClass}
+                    value={specialProducts.ylapohja.koolaus}
+                    onChange={e => setSpecialProducts({
+                      ...specialProducts,
+                      ylapohja: { ...specialProducts.ylapohja, koolaus: Number(e.target.value) }
+                    })}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>MDF-levy / Kipsilevy (m²)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    className={inputClass}
+                    value={specialProducts.ylapohja.mdfLevyKipsilevy}
+                    onChange={e => setSpecialProducts({
+                      ...specialProducts,
+                      ylapohja: { ...specialProducts.ylapohja, mdfLevyKipsilevy: Number(e.target.value) }
+                    })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Väliseinä */}
+            <div className="mb-6 p-4 bg-slate-50 rounded-lg">
+              <h4 className="font-bold text-slate-900 mb-3">VÄLISEINÄ</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>Ala- ja yläpuu 42x66 (jm)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    className={inputClass}
+                    value={specialProducts.valiseina.alaJaYlapuu}
+                    onChange={e => setSpecialProducts({
+                      ...specialProducts,
+                      valiseina: { ...specialProducts.valiseina, alaJaYlapuu: Number(e.target.value) }
+                    })}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>KP-tolppa 39x66 (kpl)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className={inputClass}
+                    value={specialProducts.valiseina.kpTolppa}
+                    onChange={e => setSpecialProducts({
+                      ...specialProducts,
+                      valiseina: { ...specialProducts.valiseina, kpTolppa: Number(e.target.value) }
+                    })}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Eriste 50 mm (m²)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    className={inputClass}
+                    value={specialProducts.valiseina.eriste50mm}
+                    onChange={e => setSpecialProducts({
+                      ...specialProducts,
+                      valiseina: { ...specialProducts.valiseina, eriste50mm: Number(e.target.value) }
+                    })}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Kipsilevy (m²)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    className={inputClass}
+                    value={specialProducts.valiseina.kipsilevy}
+                    onChange={e => setSpecialProducts({
+                      ...specialProducts,
+                      valiseina: { ...specialProducts.valiseina, kipsilevy: Number(e.target.value) }
+                    })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Rahti */}
+            <div>
+              <label className={labelClass}>RAHTI (€)</label>
+              <input
+                type="number"
+                min="0"
+                className={inputClass}
+                value={specialProducts.rahti}
+                onChange={e => setSpecialProducts({ ...specialProducts, rahti: Number(e.target.value) })}
+              />
+            </div>
+          </div>
+
+          {/* 6. Hintalaskenta */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 card-shadow">
+            <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
+              <DollarSign className="text-green-600" /> Hintalaskenta
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Asennus (€)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className={inputClass}
+                  value={pricing.asennus}
+                  onChange={e => setPricing({ ...pricing, asennus: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Elementti maalaus (€)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className={inputClass}
+                  value={pricing.elementMaalaus}
+                  onChange={e => setPricing({ ...pricing, elementMaalaus: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Ristikot (€)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className={inputClass}
+                  value={pricing.ristikot}
+                  onChange={e => setPricing({ ...pricing, ristikot: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Suunnittelu (€)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className={inputClass}
+                  value={pricing.suunnittelu}
+                  onChange={e => setPricing({ ...pricing, suunnittelu: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Tukityöt (€)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className={inputClass}
+                  value={pricing.tukityot}
+                  onChange={e => setPricing({ ...pricing, tukityot: Number(e.target.value) })}
+                />
+              </div>
+              <div className="p-4 bg-green-50 rounded-lg border-2 border-green-400">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-bold text-slate-900">HINTA €:</span>
+                  <span className="font-bold text-green-900 text-2xl">{calculateTotalPrice().toFixed(2)} €</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tallenna -nappi */}
+          <div className="flex justify-end gap-4">
+            <button
+              onClick={() => setShowElectricForm(false)}
+              className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg transition-all"
+            >
+              Peruuta
+            </button>
+            <button
+              onClick={handleSaveElectricForm}
+              className="px-6 py-3 bg-hieta-blue hover:bg-hieta-blue/90 text-white font-bold rounded-lg transition-all flex items-center gap-2 card-shadow hover-lift"
+            >
+              <CheckCircle size={18} /> Tallenna tarjoukseen
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* Vanha lomake */
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           {/* Inputs */}

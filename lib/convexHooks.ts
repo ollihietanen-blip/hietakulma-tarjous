@@ -10,17 +10,16 @@ import { isConvexConfigured } from './convexClient';
  * This prevents errors when ConvexProvider is not available or query is null/undefined
  * IMPORTANT: This hook MUST be called unconditionally (React rules)
  * 
- * Strategy: Use useMemo to check if query is valid before calling Convex hook.
- * If invalid, we still need to call a hook, so we use a pattern that prevents the error.
+ * Strategy: Pass null query when not configured, which Convex handles gracefully
  */
 export function useQuery<T>(query: any): T | null {
   // Check if we should skip - use useMemo to maintain hook order
   const shouldSkip = useMemo(() => !isConvexConfigured || !query, [query]);
   
   // Always call the hook unconditionally (React requirement)
-  // If query is invalid, we pass it anyway and let ErrorBoundary catch the error
-  // ErrorBoundary is configured to handle Convex errors gracefully
-  const result = convexUseQuery(query);
+  // Pass null when should skip - Convex will return null/undefined gracefully
+  const safeQuery = shouldSkip ? null : query;
+  const result = convexUseQuery(safeQuery);
   
   // Return null if Convex is not configured or query was invalid
   if (shouldSkip) {
@@ -38,8 +37,9 @@ export function useMutation<T extends (...args: any[]) => Promise<any>>(mutation
   const shouldSkip = useMemo(() => !isConvexConfigured || !mutation, [mutation]);
   
   // Always call the hook unconditionally
-  // ErrorBoundary will catch "is not a functionReference" errors
-  const result = convexUseMutation(mutation as any);
+  // Pass null when should skip - Convex will return null/undefined gracefully
+  const safeMutation = shouldSkip ? null : mutation;
+  const result = convexUseMutation(safeMutation as any);
   
   if (shouldSkip) {
     return null;
@@ -56,8 +56,9 @@ export function useAction<T extends (...args: any[]) => Promise<any>>(action: T 
   const shouldSkip = useMemo(() => !isConvexConfigured || !action, [action]);
   
   // Always call the hook unconditionally
-  // ErrorBoundary will catch "is not a functionReference" errors
-  const result = convexUseAction(action as any);
+  // Pass null when should skip - Convex will return null/undefined gracefully
+  const safeAction = shouldSkip ? null : action;
+  const result = convexUseAction(safeAction as any);
   
   if (shouldSkip) {
     return null;
