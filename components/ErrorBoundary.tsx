@@ -49,7 +49,9 @@ class ErrorBoundary extends Component<Props, State> {
           errorMessage.includes('useAction') ||
           errorMessage.includes('Cannot read properties of null') ||
           errorMessage.includes('Cannot read properties of undefined') ||
-          errorMessage.includes('Symbol(functionName)')) {
+          errorMessage.includes('Symbol(functionName)') ||
+          errorMessage.includes('is not a functionReference') ||
+          errorMessage.includes('functionReference')) {
         // Reset error state and render children - app will work without Convex
         this.setState({ hasError: false, error: null });
         return this.props.children;
