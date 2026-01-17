@@ -40,17 +40,32 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error to console in both dev and production
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // Check if it's a Convex error - if so, don't log it (it's expected when Convex is not configured)
+    const errorMessage = error?.message || '';
+    const isConvexError = errorMessage.includes('ConvexProvider') || 
+          errorMessage.includes('Convex client') ||
+          errorMessage.includes('useMutation') ||
+          errorMessage.includes('useQuery') ||
+          errorMessage.includes('useAction') ||
+          errorMessage.includes('Cannot read properties of null') ||
+          errorMessage.includes('Cannot read properties of undefined') ||
+          errorMessage.includes('Symbol(functionName)') ||
+          errorMessage.includes('is not a functionReference') ||
+          errorMessage.includes('functionReference');
     
-    // Also log to help with debugging in production
-    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-      // Could send to error tracking service here
-      console.error('Production error details:', {
-        message: error.message,
-        stack: error.stack,
-        componentStack: errorInfo.componentStack
-      });
+    // Only log non-Convex errors
+    if (!isConvexError) {
+      console.error('ErrorBoundary caught an error:', error, errorInfo);
+      
+      // Also log to help with debugging in production
+      if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+        // Could send to error tracking service here
+        console.error('Production error details:', {
+          message: error.message,
+          stack: error.stack,
+          componentStack: errorInfo.componentStack
+        });
+      }
     }
     
     // Don't re-throw - ErrorBoundary should handle all errors

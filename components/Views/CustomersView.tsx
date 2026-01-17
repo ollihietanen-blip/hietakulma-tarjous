@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuotation } from '../../context/QuotationContext';
 import { useCustomers } from '../../hooks/useCustomers';
-import { Users, Search, Plus, MapPin, Phone, Mail, User, Building2, ArrowRight, FolderOpen, History, Tag, X, AlertCircle, FileText, CheckCircle, XCircle, Loader2, RefreshCw, Edit3, ExternalLink } from 'lucide-react';
+import { Users, Search, Plus, MapPin, Phone, Mail, User, Building2, ArrowRight, FolderOpen, History, Tag, X, AlertCircle, FileText, CheckCircle, XCircle, Loader2, RefreshCw, Edit3, ExternalLink, Star } from 'lucide-react';
 
 interface CustomersViewProps {
   onSelectProject: () => void;
@@ -375,34 +375,55 @@ const CustomersView: React.FC<CustomersViewProps> = ({ onSelectProject }) => {
                                           {selectedCustomer.active !== false ? 'Asiakas' : 'Päättynyt'}
                                       </span>
                                   </div>
+                                  {(selectedCustomer.props?.rating || selectedCustomer.props?.arvosana) && (
+                                      <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                                          <span className="text-sm text-slate-500">Arvosana</span>
+                                          <div className="flex items-center gap-1">
+                                              {Array.from({ length: 5 }).map((_, i) => {
+                                                  const rating = selectedCustomer.props?.rating || selectedCustomer.props?.arvosana || 0;
+                                                  return (
+                                                      <Star
+                                                          key={i}
+                                                          size={16}
+                                                          className={i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-slate-300'}
+                                                      />
+                                                  );
+                                              })}
+                                          </div>
+                                      </div>
+                                  )}
                               </div>
                           </div>
 
                           {/* Osoite Section */}
-                          {selectedCustomer.address && (
+                          {(selectedCustomer.address || selectedCustomer.props?.streetAddress || selectedCustomer.props?.street || selectedCustomer.props?.postalCode || selectedCustomer.props?.city) && (
                               <div>
                                   <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Osoite</h3>
                                   <div className="space-y-2">
-                                      {/* Try to parse address or use props */}
-                                      <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                          <span className="text-sm text-slate-500">Katuosoite</span>
-                                          <span className="text-sm font-semibold text-slate-900 text-right">
-                                              {(selectedCustomer.props?.streetAddress || selectedCustomer.props?.street || selectedCustomer.address.split(',')[0])?.trim() || selectedCustomer.address}
-                                          </span>
-                                      </div>
-                                      {(selectedCustomer.props?.postalCode || selectedCustomer.address.match(/\d{5}/)?.[0]) && (
+                                      {/* Katuosoite - prioritize props fields */}
+                                      {(selectedCustomer.props?.streetAddress || selectedCustomer.props?.street || selectedCustomer.address) && (
                                           <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                              <span className="text-sm text-slate-500">Postinumero</span>
-                                              <span className="text-sm font-semibold text-slate-900">
-                                                  {selectedCustomer.props?.postalCode || selectedCustomer.address.match(/\d{5}/)?.[0]}
+                                              <span className="text-sm text-slate-500">Katuosoite</span>
+                                              <span className="text-sm font-semibold text-slate-900 text-right">
+                                                  {selectedCustomer.props?.streetAddress || selectedCustomer.props?.street || (selectedCustomer.address ? selectedCustomer.address.split(',')[0]?.trim() : '')}
                                               </span>
                                           </div>
                                       )}
-                                      {(selectedCustomer.props?.city || selectedCustomer.props?.postalCity || selectedCustomer.address.split(',').pop()?.trim()) && (
+                                      {/* Postinumero */}
+                                      {(selectedCustomer.props?.postalCode || (selectedCustomer.address && selectedCustomer.address.match(/\d{5}/)?.[0])) && (
+                                          <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                                              <span className="text-sm text-slate-500">Postinumero</span>
+                                              <span className="text-sm font-semibold text-slate-900">
+                                                  {selectedCustomer.props?.postalCode || (selectedCustomer.address ? selectedCustomer.address.match(/\d{5}/)?.[0] : '')}
+                                              </span>
+                                          </div>
+                                      )}
+                                      {/* Kaupunki */}
+                                      {(selectedCustomer.props?.city || selectedCustomer.props?.postalCity || (selectedCustomer.address && selectedCustomer.address.split(',').pop()?.trim())) && (
                                           <div className="flex justify-between items-center py-2 border-b border-slate-100">
                                               <span className="text-sm text-slate-500">Kaupunki</span>
                                               <span className="text-sm font-semibold text-slate-900">
-                                                  {selectedCustomer.props?.city || selectedCustomer.props?.postalCity || selectedCustomer.address.split(',').pop()?.trim()}
+                                                  {selectedCustomer.props?.city || selectedCustomer.props?.postalCity || (selectedCustomer.address ? selectedCustomer.address.split(',').pop()?.trim() : '')}
                                               </span>
                                           </div>
                                       )}
@@ -414,11 +435,13 @@ const CustomersView: React.FC<CustomersViewProps> = ({ onSelectProject }) => {
                           <div>
                               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Yhteyshenkilö</h3>
                               <div className="space-y-2">
-                                  {selectedCustomer.contactPerson && (() => {
-                                      // Try to split contactPerson into first and last name
-                                      const parts = selectedCustomer.contactPerson.trim().split(/\s+/);
-                                      const firstName = parts[0] || '';
-                                      const lastName = parts.slice(1).join(' ') || '';
+                                  {(() => {
+                                      // Try to get firstName and lastName from props first, then fall back to splitting contactPerson
+                                      const firstName = selectedCustomer.props?.firstName || selectedCustomer.props?.etunimi || 
+                                          (selectedCustomer.contactPerson ? selectedCustomer.contactPerson.trim().split(/\s+/)[0] : '');
+                                      const lastName = selectedCustomer.props?.lastName || selectedCustomer.props?.sukunimi || 
+                                          (selectedCustomer.contactPerson ? selectedCustomer.contactPerson.trim().split(/\s+/).slice(1).join(' ') : '');
+                                      
                                       return (
                                           <>
                                               {firstName && (
