@@ -15,20 +15,17 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 
-// Only wrap with ConvexProvider if Convex is configured
-// Otherwise render App directly (it will use local state via QuotationContext)
+// Always wrap with ConvexProvider to prevent useQuery errors
+// If Convex is not configured, a dummy client is used
+// The hooks will check isConvexConfigured and return null if not configured
 const app = <App />;
 
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      {isConvexConfigured && convex ? (
-        <ConvexProvider client={convex}>
-          {app}
-        </ConvexProvider>
-      ) : (
-        app
-      )}
+      <ConvexProvider client={convex}>
+        {app}
+      </ConvexProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );
