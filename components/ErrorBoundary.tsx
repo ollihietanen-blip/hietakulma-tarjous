@@ -41,11 +41,15 @@ class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       // If it's a Convex error, render children anyway (app works without Convex)
-      if (this.state.error?.message?.includes('ConvexProvider') || 
-          this.state.error?.message?.includes('Convex client') ||
-          this.state.error?.message?.includes('useMutation') ||
-          this.state.error?.message?.includes('useQuery') ||
-          this.state.error?.message?.includes('useAction')) {
+      const errorMessage = this.state.error?.message || '';
+      if (errorMessage.includes('ConvexProvider') || 
+          errorMessage.includes('Convex client') ||
+          errorMessage.includes('useMutation') ||
+          errorMessage.includes('useQuery') ||
+          errorMessage.includes('useAction') ||
+          errorMessage.includes('Cannot read properties of null') ||
+          errorMessage.includes('Cannot read properties of undefined') ||
+          errorMessage.includes('Symbol(functionName)')) {
         // Reset error state and render children - app will work without Convex
         this.setState({ hasError: false, error: null });
         return this.props.children;

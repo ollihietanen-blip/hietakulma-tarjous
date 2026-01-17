@@ -34,7 +34,9 @@ function App() {
     return stored as Id<"users"> | null;
   });
   
-  const users = useQuery(api?.users?.listUsers);
+  // Safely get the query - ensure api and nested properties exist
+  const usersQuery = (api && api.users && api.users.listUsers) ? api.users.listUsers : undefined;
+  const users = useQuery(usersQuery);
   const currentUser = users?.find(u => u._id === currentUserId) || users?.find(u => u.active) || null;
   
   // Set first user as current if none selected

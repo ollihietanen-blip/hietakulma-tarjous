@@ -5,22 +5,36 @@ import { useQuery as convexUseQuery, useMutation as convexUseMutation, useAction
 import { isConvexConfigured } from './convexClient';
 
 /**
- * Safe useQuery hook that returns null if Convex is not configured
- * This prevents errors when ConvexProvider is not available
+ * Safe useQuery hook that returns null if Convex is not configured or query is invalid
+ * This prevents errors when ConvexProvider is not available or query is null/undefined
  * IMPORTANT: This hook MUST be called unconditionally (React rules)
- * If ConvexProvider is missing, the hook will throw an error which ErrorBoundary will catch
+ * 
+ * Note: When query is undefined/null, we still call the hook to satisfy React's rules,
+ * but the ErrorBoundary will catch any errors that occur.
  */
 export function useQuery<T>(query: any): T | null {
-  // Always call the hook (React requirement)
-  // If Convex is not configured, the hook will throw an error
-  // ErrorBoundary will catch it and allow the app to continue
+  // Always call the hook unconditionally (React requirement)
+  // If query is invalid or Convex is not configured, the hook may throw an error
+  // which ErrorBoundary will catch, or it may return undefined/null which we handle here
+  
+  // Check if we should skip the query
   if (!isConvexConfigured || !query) {
-    // Still call the hook to satisfy React rules, but it will throw
-    // ErrorBoundary will handle the error
-    return convexUseQuery(query as any);
+    // We still need to call the hook, but we'll let ErrorBoundary handle any errors
+    // For now, we'll attempt to call it and return null if it fails
+    // The ErrorBoundary is configured to catch Convex-related errors and continue rendering
+    let result: T | undefined;
+    try {
+      // Call with the query (even if undefined) - ErrorBoundary will catch if it throws
+      result = convexUseQuery(query);
+    } catch {
+      // ErrorBoundary will handle this
+      return null;
+    }
+    return result ?? null;
   }
   
-  return convexUseQuery(query);
+  // Normal case: Convex is configured and query is valid
+  return convexUseQuery(query) ?? null;
 }
 
 /**
@@ -28,14 +42,17 @@ export function useQuery<T>(query: any): T | null {
  * IMPORTANT: This hook MUST be called unconditionally (React rules)
  */
 export function useMutation<T extends (...args: any[]) => Promise<any>>(mutation: T | null | undefined): T | null {
-  // Always call the hook (React requirement)
   if (!isConvexConfigured || !mutation) {
-    // Still call the hook to satisfy React rules, but it will throw
-    // ErrorBoundary will handle the error
-    return convexUseMutation(mutation as any);
+    let result: T | undefined;
+    try {
+      result = convexUseMutation(mutation);
+    } catch {
+      return null;
+    }
+    return result ?? null;
   }
   
-  return convexUseMutation(mutation);
+  return convexUseMutation(mutation) ?? null;
 }
 
 /**
@@ -43,12 +60,15 @@ export function useMutation<T extends (...args: any[]) => Promise<any>>(mutation
  * IMPORTANT: This hook MUST be called unconditionally (React rules)
  */
 export function useAction<T extends (...args: any[]) => Promise<any>>(action: T | null | undefined): T | null {
-  // Always call the hook (React requirement)
   if (!isConvexConfigured || !action) {
-    // Still call the hook to satisfy React rules, but it will throw
-    // ErrorBoundary will handle the error
-    return convexUseAction(action as any);
+    let result: T | undefined;
+    try {
+      result = convexUseAction(action);
+    } catch {
+      return null;
+    }
+    return result ?? null;
   }
   
-  return convexUseAction(action);
+  return convexUseAction(action) ?? null;
 }

@@ -28,8 +28,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
     return stored as Id<"users"> | null;
   });
   
-  // Fetch all users from database
-  const users = useQuery(api?.users?.listUsers);
+  // Fetch all users from database - safely check api structure
+  const usersQuery = (api && api.users && api.users.listUsers) ? api.users.listUsers : undefined;
+  const users = useQuery(usersQuery);
   
   // Find current user
   const currentUser = users?.find(u => u._id === currentUserId) || users?.find(u => u.active) || null;

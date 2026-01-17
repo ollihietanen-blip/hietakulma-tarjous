@@ -6,10 +6,16 @@ import { Id } from '../../convex/_generated/dataModel';
 import { Plus, Edit2, Trash2, Save, X, UserCheck, UserX } from 'lucide-react';
 
 const UsersManagementView: React.FC = () => {
-  const users = useQuery(api?.users?.listUsers) || [];
-  const createUser = useMutation(api?.users?.createUser);
-  const updateUser = useMutation(api?.users?.updateUser);
-  const deleteUser = useMutation(api?.users?.deleteUser);
+  // Safely get queries - ensure api and nested properties exist
+  const usersQuery = (api && api.users && api.users.listUsers) ? api.users.listUsers : undefined;
+  const createUserQuery = (api && api.users && api.users.createUser) ? api.users.createUser : undefined;
+  const updateUserQuery = (api && api.users && api.users.updateUser) ? api.users.updateUser : undefined;
+  const deleteUserQuery = (api && api.users && api.users.deleteUser) ? api.users.deleteUser : undefined;
+  
+  const users = useQuery(usersQuery) || [];
+  const createUser = useMutation(createUserQuery);
+  const updateUser = useMutation(updateUserQuery);
+  const deleteUser = useMutation(deleteUserQuery);
 
   const [editingId, setEditingId] = useState<Id<"users"> | null>(null);
   const [isCreating, setIsCreating] = useState(false);

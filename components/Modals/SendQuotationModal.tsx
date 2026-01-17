@@ -27,7 +27,9 @@ const SendQuotationModal: React.FC<SendQuotationModalProps> = ({
   const [selectedTone, setSelectedTone] = useState<'professional' | 'friendly' | 'formal'>('professional');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [changes, setChanges] = useState<string>('');
-  const generateText = useAction(api?.gemini?.generateText);
+  // Safely get the action - ensure api and nested properties exist
+  const generateTextAction = (api && api.gemini && api.gemini.generateText) ? api.gemini.generateText : undefined;
+  const generateText = useAction(generateTextAction);
 
   // Check if this is an updated quotation
   const isUpdate = previousVersion !== undefined && previousVersion !== null;

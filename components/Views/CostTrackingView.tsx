@@ -29,7 +29,9 @@ const CostTrackingView: React.FC = () => {
   const [invoiceAnalysis, setInvoiceAnalysis] = useState<InvoiceAnalysis | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const generateWithImages = useAction(api?.gemini?.generateWithImages);
+  // Safely get the action - ensure api and nested properties exist
+  const generateWithImagesAction = (api && api.gemini && api.gemini.generateWithImages) ? api.gemini.generateWithImages : undefined;
+  const generateWithImages = useAction(generateWithImagesAction);
   
   // New Entry State
   const [newEntry, setNewEntry] = useState<Partial<CostEntry>>({

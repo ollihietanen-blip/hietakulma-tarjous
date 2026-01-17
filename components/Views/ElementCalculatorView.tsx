@@ -55,7 +55,9 @@ interface AIAnalysisResult {
 const ElementCalculatorView: React.FC<ElementCalculatorViewProps> = ({ onComplete }) => {
   const { addElement, quotation, saveQuotation } = useQuotation();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const generateWithImages = useAction(api?.gemini?.generateWithImages);
+  // Safely get the action - ensure api and nested properties exist
+  const generateWithImagesAction = (api && api.gemini && api.gemini.generateWithImages) ? api.gemini.generateWithImages : undefined;
+  const generateWithImages = useAction(generateWithImagesAction);
   
   // Opening type definition
   interface Opening {
