@@ -21,25 +21,25 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
   const { quotation } = useQuotation();
   const [isProjectMenuExpanded, setIsProjectMenuExpanded] = useState(isProjectActive);
   const [showUserSwitcher, setShowUserSwitcher] = useState(false);
-  
+
   // Get current user ID from localStorage or use first active user
   const [currentUserId, setCurrentUserId] = useState<Id<"users"> | null>(() => {
     const stored = localStorage.getItem('currentUserId');
     return stored as Id<"users"> | null;
   });
-  
+
   // Fetch all users from database - safely check api structure, wrap in useMemo for stability
   // IMPORTANT: Query must be stable to ensure consistent hook order in useQuery wrapper
-  const usersQuery = useMemo(() => 
+  const usersQuery = useMemo(() =>
     (api && api.users && api.users.listUsers) ? api.users.listUsers : null,
     [api?.users?.listUsers]
   );
-  
-  const users = useQuery(usersQuery);
-  
+
+  const users = useQuery(usersQuery) as any[];
+
   // Find current user
   const currentUser = users?.find(u => u._id === currentUserId) || users?.find(u => u.active) || null;
-  
+
   // Set first user as current if none selected
   useEffect(() => {
     if (users && users.length > 0 && !currentUserId) {
@@ -76,7 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
       };
     }
   }, [showUserSwitcher]);
-  
+
   // Get user initials
   const getUserInitials = (name: string) => {
     const parts = name.split(' ');
@@ -85,7 +85,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
     }
     return name.substring(0, 2).toUpperCase();
   };
-  
+
   // Map role from database to UserRole type
   const getRoleFromUser = (role: string): UserRole => {
     if (role === 'toimitusjohtaja' || role === 'myyntipäällikkö') {
@@ -96,7 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
     }
     return 'sales';
   };
-  
+
   // Get role display name
   const getRoleDisplayName = (role: string) => {
     const roleMap: Record<string, string> = {
@@ -115,8 +115,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
   }, [isProjectActive]);
 
   const handleNavigation = (viewId: string) => {
-      onChangeView(viewId);
-      if (onClose) onClose();
+    console.log('Sidebar: Navigating to', viewId);
+    onChangeView(viewId);
+    if (onClose) onClose();
   };
 
   const projectSubItems = [
@@ -192,17 +193,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
         </div>
       );
     }
-    
+
     // Case 2: Item is a simple link
     return (
       <button
         key={item.id}
         onClick={() => handleNavigation(item.id)}
-        className={`w-full flex items-center justify-between py-2.5 rounded-lg transition-all group mb-1 ${isSubItem ? 'px-3 text-sm' : 'px-3'} ${
-          isActive 
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20 border-l-2 border-blue-400' 
-            : 'text-slate-400 hover:bg-slate-800 hover:text-white hover:border-l-2 hover:border-slate-600'
-        }`}
+        className={`w-full flex items-center justify-between py-2.5 rounded-lg transition-all group mb-1 ${isSubItem ? 'px-3 text-sm' : 'px-3'} ${isActive
+          ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20 border-l-2 border-blue-400'
+          : 'text-slate-400 hover:bg-slate-800 hover:text-white hover:border-l-2 hover:border-slate-600'
+          }`}
       >
         <div className="flex items-center gap-3">
           <span className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-white transition-colors'}>
@@ -214,12 +214,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
       </button>
     );
   };
-  
+
   return (
     <>
       {/* Mobile Backdrop */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-[60] md:hidden backdrop-blur-sm"
           onClick={onClose}
         ></div>
@@ -234,9 +234,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
         {/* Brand */}
         <div className="p-6 border-b border-slate-800 flex justify-between items-center">
           <div className="flex flex-col gap-2">
-            <img 
-              src="/images/Hietakulma_logo_cmyk_valk.png" 
-              alt="Hietakulma" 
+            <img
+              src="/images/Hietakulma_logo_cmyk_valk.png"
+              alt="Hietakulma"
               className="h-8 w-auto"
             />
             <span className="text-[10px] tracking-[0.3em] text-slate-500 uppercase font-sans font-medium">
@@ -268,17 +268,17 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
               <div className="flex items-center gap-3 mb-4">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold font-display text-lg
                     ${currentUser.role === 'toimitusjohtaja' ? 'bg-purple-500 text-white' :
-                      currentUser.role === 'myyntipäällikkö' ? 'bg-blue-500 text-white' :
+                    currentUser.role === 'myyntipäällikkö' ? 'bg-blue-500 text-white' :
                       currentUser.role === 'tehtaanjohtaja' ? 'bg-green-500 text-white' :
-                      'bg-hieta-sand text-hieta-black'}
+                        'bg-hieta-sand text-hieta-black'}
                 `}>
                   {getUserInitials(currentUser.name)}
                 </div>
                 <div className="flex-1">
                   <div className="text-sm font-bold text-white">{currentUser.name}</div>
                   <div className="relative user-switcher-container">
-                    <div 
-                      className="text-xs text-slate-500 cursor-pointer hover:text-blue-400 flex items-center gap-1" 
+                    <div
+                      className="text-xs text-slate-500 cursor-pointer hover:text-blue-400 flex items-center gap-1"
                       onClick={() => users && users.length > 1 && setShowUserSwitcher(!showUserSwitcher)}
                     >
                       {getRoleDisplayName(currentUser.role)}
@@ -294,18 +294,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isOpen = t
                             <button
                               key={user._id}
                               onClick={() => handleUserSwitch(user._id)}
-                              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-2 ${
-                                user._id === currentUserId
-                                  ? 'bg-blue-600 text-white'
-                                  : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-                              }`}
+                              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-2 ${user._id === currentUserId
+                                ? 'bg-blue-600 text-white'
+                                : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                                }`}
                             >
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                                user.role === 'toimitusjohtaja' ? 'bg-purple-500 text-white' :
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${user.role === 'toimitusjohtaja' ? 'bg-purple-500 text-white' :
                                 user.role === 'myyntipäällikkö' ? 'bg-blue-500 text-white' :
-                                user.role === 'tehtaanjohtaja' ? 'bg-green-500 text-white' :
-                                'bg-hieta-sand text-hieta-black'
-                              }`}>
+                                  user.role === 'tehtaanjohtaja' ? 'bg-green-500 text-white' :
+                                    'bg-hieta-sand text-hieta-black'
+                                }`}>
                                 {getUserInitials(user.name)}
                               </div>
                               <div>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAction } from '../lib/convexHooks';
 import { api } from '../convex/_generated/api';
 import { isConvexConfigured } from '../lib/convexClient';
@@ -38,11 +38,24 @@ export function useCustomers(options: UseCustomersOptions = {}) {
 
   // Safely get the action - ensure api and nested properties exist, wrap in useMemo for stability
   // IMPORTANT: Query must be stable to ensure consistent hook order in useAction wrapper
-  const getCustomersActionQuery = useMemo(() => 
-    (api && api.thingService && api.thingService.getCustomers) ? api.thingService.getCustomers : null,
-    [api?.thingService?.getCustomers]
-  );
+  // api is stable from Convex codegen, so empty deps are safe
+  const getCustomersActionQuery = useMemo(() => {
+    try {
+      return api?.thingService?.getCustomers ?? null;
+    } catch {
+      return null;
+    }
+  }, []); // Empty deps - api is stable from Convex codegen
   const getCustomersAction = useAction(getCustomersActionQuery);
+
+  // Stabilize filter object - convert to primitives for dependency tracking
+  const stableFilter = useMemo(() => filter, [
+    filter?.active,
+    filter?.sysId,
+    filter?.sysIds?.join(','),
+    filter?.businessId,
+    filter?.deleted
+  ]);
 
   useEffect(() => {
     if (!enabled || !isConvexConfigured || !getCustomersAction) {
@@ -54,7 +67,7 @@ export function useCustomers(options: UseCustomersOptions = {}) {
       setError(null);
       
       try {
-        const result = await getCustomersAction({ filter });
+        const result = await getCustomersAction({ filter: stableFilter });
         setCustomers(result || []);
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Failed to fetch customers');
@@ -67,9 +80,9 @@ export function useCustomers(options: UseCustomersOptions = {}) {
     };
 
     fetchCustomers();
-  }, [enabled, isConvexConfigured, getCustomersAction, JSON.stringify(filter)]);
+  }, [enabled, isConvexConfigured, getCustomersAction, stableFilter]);
 
-  const refetch = async () => {
+  const refetch = useCallback(async () => {
     if (!enabled || !isConvexConfigured || !getCustomersAction) {
       return;
     }
@@ -78,7 +91,7 @@ export function useCustomers(options: UseCustomersOptions = {}) {
     setError(null);
     
     try {
-      const result = await getCustomersAction({ filter });
+      const result = await getCustomersAction({ filter: stableFilter });
       setCustomers(result || []);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to fetch customers');
@@ -88,7 +101,7 @@ export function useCustomers(options: UseCustomersOptions = {}) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [enabled, isConvexConfigured, getCustomersAction, stableFilter]);
 
   return { customers, loading, error, refetch };
 }

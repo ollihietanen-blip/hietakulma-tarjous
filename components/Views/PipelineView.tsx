@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { 
-    KanbanSquare, MoreHorizontal, Plus, ArrowRight, 
+import {
+    KanbanSquare, MoreHorizontal, Plus, ArrowRight,
     Calendar, User, AlertCircle, CheckCircle2, TrendingUp, Euro
 } from 'lucide-react';
 
@@ -16,6 +16,11 @@ interface Deal {
 }
 
 const PipelineView: React.FC = () => {
+    React.useEffect(() => {
+        console.log('PipelineView mounted');
+        return () => console.log('PipelineView unmounted');
+    }, []);
+
     // Mock Data
     const [deals, setDeals] = useState<Deal[]>([
         { id: '1', title: 'Loma-asunto Levi', customer: 'Matti Meikäläinen', value: 45200, stage: 'estimating', date: '2 pv sitten', probability: 40, tags: ['Kiireellinen'] },
@@ -38,8 +43,8 @@ const PipelineView: React.FC = () => {
         const currentIndex = stageOrder.indexOf(currentStage);
         if (currentIndex < stageOrder.length - 1) {
             const nextStage = stageOrder[currentIndex + 1] as Deal['stage'];
-            setDeals(deals.map(d => d.id === id ? { 
-                ...d, 
+            setDeals(deals.map(d => d.id === id ? {
+                ...d,
                 stage: nextStage,
                 probability: nextStage === 'won' ? 100 : d.probability + 20
             } : d));
@@ -64,7 +69,7 @@ const PipelineView: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-1.5">
                             <TrendingUp size={14} className="text-blue-500" />
-                            Ennuste: <span className="font-bold text-hieta-blue">{weightedForecast.toLocaleString('fi-FI', {maximumFractionDigits: 0})} €</span>
+                            Ennuste: <span className="font-bold text-hieta-blue">{weightedForecast.toLocaleString('fi-FI', { maximumFractionDigits: 0 })} €</span>
                         </div>
                     </div>
                 </div>
@@ -79,25 +84,25 @@ const PipelineView: React.FC = () => {
                     {stages.map(stage => {
                         const stageDeals = deals.filter(d => d.stage === stage.id);
                         const stageTotal = stageDeals.reduce((sum, d) => sum + d.value, 0);
-                        
+
                         return (
                             <div key={stage.id} className="flex-1 flex flex-col min-w-[280px]">
                                 {/* Column Header */}
                                 <div className={`p-3 rounded-t-xl border-t border-x ${stage.color} ${stage.border} flex justify-between items-center mb-0`}>
                                     <div>
                                         <h3 className={`font-bold text-sm uppercase tracking-wide ${stage.text}`}>{stage.label}</h3>
-                                        <span className="text-xs text-slate-500 font-medium">{stageDeals.length} kpl • {stageTotal.toLocaleString('fi-FI', {maximumFractionDigits:0})} €</span>
+                                        <span className="text-xs text-slate-500 font-medium">{stageDeals.length} kpl • {stageTotal.toLocaleString('fi-FI', { maximumFractionDigits: 0 })} €</span>
                                     </div>
                                     <div className="h-6 w-6 rounded-full bg-white/50 flex items-center justify-center text-xs font-bold border border-white/50">
                                         {stageDeals.length}
                                     </div>
                                 </div>
-                                
+
                                 {/* Drop Zone / List */}
                                 <div className="flex-1 bg-slate-100/50 rounded-b-xl border-x border-b border-slate-200 p-3 space-y-3 overflow-y-auto">
                                     {stageDeals.map(deal => (
                                         <div key={deal.id} className="bg-white p-4 rounded-lg card-shadow border border-slate-200 group hover:shadow-md transition-all duration-200 hover:border-hieta-blue hover-lift relative">
-                                            
+
                                             {/* Tags */}
                                             <div className="flex gap-2 mb-2">
                                                 {deal.tags.map(tag => (
@@ -123,7 +128,7 @@ const PipelineView: React.FC = () => {
 
                                             {/* Hover Action */}
                                             {deal.stage !== 'won' && (
-                                                <button 
+                                                <button
                                                     onClick={() => moveDeal(deal.id, deal.stage)}
                                                     className="absolute top-1/2 right-[-10px] translate-y-[-50%] bg-blue-600 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 group-hover:right-[-15px] transition-all z-10"
                                                     title="Siirrä seuraavaan vaiheeseen"
@@ -131,19 +136,19 @@ const PipelineView: React.FC = () => {
                                                     <ArrowRight size={16} />
                                                 </button>
                                             )}
-                                            
+
                                             {/* Probability Bar */}
                                             {deal.stage !== 'won' && (
                                                 <div className="mt-3 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                    <div 
-                                                        className={`h-full rounded-full ${deal.probability > 70 ? 'bg-green-500' : deal.probability > 40 ? 'bg-blue-500' : 'bg-slate-300'}`} 
+                                                    <div
+                                                        className={`h-full rounded-full ${deal.probability > 70 ? 'bg-green-500' : deal.probability > 40 ? 'bg-blue-500' : 'bg-slate-300'}`}
                                                         style={{ width: `${deal.probability}%` }}
                                                     ></div>
                                                 </div>
                                             )}
                                         </div>
                                     ))}
-                                    
+
                                     {/* Empty State */}
                                     {stageDeals.length === 0 && (
                                         <div className="h-24 border-2 border-dashed border-slate-200 rounded-lg flex items-center justify-center text-slate-400 text-xs font-medium">
